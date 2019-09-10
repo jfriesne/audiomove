@@ -118,10 +118,6 @@ private:
 
 void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList & filters)
 {
-#if (QT_VERSION >= 0x040500)
-   setOption(DontUseNativeDialog);  // FogBugz #5274 
-#endif
-
    // FogBugz #4373:  Watch combo boxes for changes to the directory (Qt 4.3 STILL doesn't have the support we need :^P )
    {
 #if (QT_VERSION >= 0x050000)
@@ -233,6 +229,10 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
       connect(_recentFilesTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)), this, SLOT(RecentFileActivated(QTreeWidgetItem *, int)));
       extrasLayout->addWidget(_recentFilesTreeWidget);
    }
+
+#if (QT_VERSION >= 0x040500)
+   setOption(DontUseNativeDialog);  // FogBugz #5274, FogBugz #9656 -- this must be done *here*, no sooner and no later!
+#endif
 
    AddBottomWidget(_extras);
 

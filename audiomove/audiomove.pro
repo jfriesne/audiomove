@@ -1,4 +1,4 @@
-CONFIG     += qt warn_on release thread static rtti link_prl
+CONFIG     += qt warn_on release thread rtti link_prl
 
 greaterThan(QT_MAJOR_VERSION, 4) {
    QT += widgets
