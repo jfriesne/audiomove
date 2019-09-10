@@ -1,6 +1,6 @@
-AudioMove v1.21 5/19/2016
+AudioMove v1.22 9/10/2019
 by Jeremy Friesner (jaf@meyersound.com)
-Copyright 2004-2016 Meyer Sound Laboratories
+Copyright 2004-2019 Meyer Sound Laboratories
 Licensed under the GNU Public License
 See file COPYING.TXT for details.
 
@@ -144,6 +144,10 @@ NOTE:  To make use of the .lcsDisk file, you will need to have software that kno
  
 History
 -------
+
+v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
+                   for easier development.
+                 - Updated the code to compile under either Qt 4.x or Qt 5.x.
 
 v1.21 5/19/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format

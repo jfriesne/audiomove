@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # A function to set the timestamps of all files matching the arguments back
 # to a fixed time in the future.  (Just doing a plain 'touch' without a fixed
@@ -19,7 +19,7 @@ echo "************************************************************"
 pushd libsamplerate
 ./autogen.sh
 #touch_without_race_condition config* aclocal* Makefile*
-./configure --enable-shared=no --prefix=`pwd`/temp_install
+./configure --enable-shared=no --prefix=$(pwd)/temp_install
 make install
 popd
 
@@ -28,7 +28,7 @@ echo "* Building ogg..."
 echo "************************************************************"
 pushd ogg
 ./autogen.sh
-./configure --enable-shared=no --prefix=`pwd`/temp_install
+./configure --enable-shared=no --prefix=$(pwd)/temp_install
 #touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
@@ -38,7 +38,7 @@ echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
 ./autogen.sh
-./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install
+./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
 #touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
@@ -48,7 +48,7 @@ echo "* Building flac..."
 echo "************************************************************"
 pushd flac
 ./autogen.sh
-./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install --disable-asm-optimizations
+./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install --disable-asm-optimizations
 #touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
@@ -57,17 +57,17 @@ echo "************************************************************"
 echo "* Building libsndfile..."
 echo "************************************************************"
 pushd libsndfile
-export OGG_CFLAGS='-I'`pwd`'/../ogg/temp_install/include'
-export OGG_LIBS='-L'`pwd`'/../ogg/temp_install/lib -logg'
-export VORBIS_CFLAGS='-I'`pwd`'/../vorbis/temp_install/include'
-export VORBIS_LIBS='-L'`pwd`'/../vorbis/temp_install/lib -lvorbis'
-export VORBISENC_CFLAGS='-I'`pwd`'/../vorbis/temp_install/include'
-export VORBISENC_LIBS='-L'`pwd`'/../vorbis/temp_install/lib -lvorbisenc'
-export FLAC_CFLAGS='-I'`pwd`'/../flac/temp_install/include'
-export FLAC_LIBS='-L'`pwd`'/../flac/temp_install/lib -lflac'
+export OGG_CFLAGS='-I'$(pwd)'/../ogg/temp_install/include'
+export OGG_LIBS='-L'$(pwd)'/../ogg/temp_install/lib -logg'
+export VORBIS_CFLAGS='-I'$(pwd)'/../vorbis/temp_install/include'
+export VORBIS_LIBS='-L'$(pwd)'/../vorbis/temp_install/lib -lvorbis'
+export VORBISENC_CFLAGS='-I'$(pwd)'/../vorbis/temp_install/include'
+export VORBISENC_LIBS='-L'$(pwd)'/../vorbis/temp_install/lib -lvorbisenc'
+export FLAC_CFLAGS='-I'$(pwd)'/../flac/temp_install/include'
+export FLAC_LIBS='-L'$(pwd)'/../flac/temp_install/lib -lflac'
 #touch_without_race_condition config* aclocal* Makefile*
 ./autogen.sh
-./configure --enable-shared=no --enable-external-libs --prefix=`pwd`/temp_install
+./configure --enable-shared=no --enable-external-libs --prefix=$(pwd)/temp_install
 make install
 popd
 
