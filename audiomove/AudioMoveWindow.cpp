@@ -1325,18 +1325,6 @@ bool AudioMoveWindow :: IsTargetSampleWidthSupported() const
 
    switch(GetTargetFormat())
    {
-      case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_WAV64: case AUDIO_FORMAT_RF64:
-         switch(sw)
-         {
-            case AUDIO_WIDTH_INT8:
-               return false;
-
-            default:
-               // empty
-            break;
-         }
-      break;
-            
       case AUDIO_FORMAT_FLAC: case AUDIO_FORMAT_PAF_LE: case AUDIO_FORMAT_PAF_BE:
          switch(sw)
          {

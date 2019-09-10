@@ -96,7 +96,18 @@ status_t LibSndFileIOThread :: OpenFile()
             case AUDIO_WIDTH_INT32:  info.format |= SF_FORMAT_PCM_32; break;
             case AUDIO_WIDTH_INT24:  info.format |= SF_FORMAT_PCM_24; break;
             case AUDIO_WIDTH_INT16:  info.format |= SF_FORMAT_PCM_16; break;
-            case AUDIO_WIDTH_INT8:   info.format |= SF_FORMAT_PCM_S8; break;  // S8 is supported by FLAC, U8 isn't
+            case AUDIO_WIDTH_INT8:
+               switch(_outputFileFormat)
+               {
+                  case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_WAV64:  case AUDIO_FORMAT_RF64: // these format support only unsigned-8-bit, not signed-8-bit
+                     info.format |= SF_FORMAT_PCM_U8;
+                  break;
+
+                  default:
+                     info.format |= SF_FORMAT_PCM_S8; 
+                  break;
+               }
+            break;
             default:                 info.format |= SF_FORMAT_FLOAT;  break;
          }
       }
