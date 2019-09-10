@@ -14,7 +14,7 @@ mac:RC_FILE    = ./audiomove.icns
 win32:LIBS += $$SUBMODULESDIR/libsamplerate/samplerate.lib $$SUBMODULESDIR/libsndfile/sndfile.lib
 
 mac:LIBS += $$SUBMODULESDIR/libsamplerate/src/.libs/libsamplerate.a $$SUBMODULESDIR/libsndfile/src/.libs/libsndfile.a # -lsndfile -lsamplerate
-mac:LIBS += -lz -framework IOKit -framework Carbon
+mac:LIBS += -lz -framework IOKit -framework Carbon -framework SystemConfiguration
 
 linux:LIBS += $$SUBMODULESDIR/libsamplerate/src/.libs/libsamplerate.a $$SUBMODULESDIR/libsndfile/src/.libs/libsndfile.a # -lsndfile -lsamplerate
 

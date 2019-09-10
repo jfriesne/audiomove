@@ -37,8 +37,8 @@ echo "************************************************************"
 echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
-./autogen.sh --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install
-./configure
+./autogen.sh
+./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install
 #touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
