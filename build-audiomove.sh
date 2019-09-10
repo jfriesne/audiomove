@@ -11,6 +11,8 @@ touch_without_race_condition ()
    touch -rtemp_dummy_file.txt $@  # then set all specified files to that timestamp
 }
 
+pushd submodules
+
 echo "************************************************************"
 echo "* Building libsamplerate..."
 echo "************************************************************"
@@ -21,28 +23,28 @@ make install
 popd
 
 echo "************************************************************"
-echo "* Building libogg..."
+echo "* Building ogg..."
 echo "************************************************************"
-pushd libogg
+pushd ogg
 ./configure --enable-shared=no --prefix=`pwd`/temp_install
 touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
 
 echo "************************************************************"
-echo "* Building libvorbis..."
+echo "* Building vorbis..."
 echo "************************************************************"
-pushd libvorbis
-./autogen.sh --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../libogg/temp_install
+pushd vorbis
+./autogen.sh --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install
 touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
 
 echo "************************************************************"
-echo "* Building libFLAC..."
+echo "* Building flac..."
 echo "************************************************************"
 pushd flac
-./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../libogg/temp_install --disable-asm-optimizations
+./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install --disable-asm-optimizations
 touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
@@ -51,18 +53,20 @@ echo "************************************************************"
 echo "* Building libsndfile..."
 echo "************************************************************"
 pushd libsndfile
-export OGG_CFLAGS='-I'`pwd`'/../libogg/temp_install/include'
-export OGG_LIBS='-L'`pwd`'/../libogg/temp_install/lib -logg'
-export VORBIS_CFLAGS='-I'`pwd`'/../libvorbis/temp_install/include'
-export VORBIS_LIBS='-L'`pwd`'/../libvorbis/temp_install/lib -lvorbis'
-export VORBISENC_CFLAGS='-I'`pwd`'/../libvorbis/temp_install/include'
-export VORBISENC_LIBS='-L'`pwd`'/../libvorbis/temp_install/lib -lvorbisenc'
+export OGG_CFLAGS='-I'`pwd`'/../ogg/temp_install/include'
+export OGG_LIBS='-L'`pwd`'/../ogg/temp_install/lib -logg'
+export VORBIS_CFLAGS='-I'`pwd`'/../vorbis/temp_install/include'
+export VORBIS_LIBS='-L'`pwd`'/../vorbis/temp_install/lib -lvorbis'
+export VORBISENC_CFLAGS='-I'`pwd`'/../vorbis/temp_install/include'
+export VORBISENC_LIBS='-L'`pwd`'/../vorbis/temp_install/lib -lvorbisenc'
 export FLAC_CFLAGS='-I'`pwd`'/../flac/temp_install/include'
 export FLAC_LIBS='-L'`pwd`'/../flac/temp_install/lib -lflac'
 touch_without_race_condition config* aclocal* Makefile*
 ./configure --enable-shared=no --enable-external-libs --prefix=`pwd`/temp_install
 make install
 popd
+
+popd  # Pop out of submodules folder
 
 echo "************************************************************"
 echo "* Building AudioMove..."
