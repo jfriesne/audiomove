@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AudioMove", "AudioMove.vcproj", "{77DDFC57-CA3E-32D1-9D94-4DC939BB4613}"
+	ProjectSection(ProjectDependencies) = postProject
+		{875F2AC6-41F9-42ED-8A04-615500929B98} = {875F2AC6-41F9-42ED-8A04-615500929B98}
+	EndProjectSection
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "AudioMove Setup", "AudioMove Setup\AudioMove Setup.vdproj", "{AA361C9D-EDA1-49EC-BBBF-B609C4B19E63}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsamplerate", "..\..\libsamplerate\libsamplerate.vcproj", "{875F2AC6-41F9-42ED-8A04-615500929B98}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77DDFC57-CA3E-32D1-9D94-4DC939BB4613}.Debug|Win32.ActiveCfg = Debug|Win32
+		{77DDFC57-CA3E-32D1-9D94-4DC939BB4613}.Debug|Win32.Build.0 = Debug|Win32
+		{77DDFC57-CA3E-32D1-9D94-4DC939BB4613}.Release|Win32.ActiveCfg = Release|Win32
+		{77DDFC57-CA3E-32D1-9D94-4DC939BB4613}.Release|Win32.Build.0 = Release|Win32
+		{AA361C9D-EDA1-49EC-BBBF-B609C4B19E63}.Debug|Win32.ActiveCfg = Debug
+		{AA361C9D-EDA1-49EC-BBBF-B609C4B19E63}.Release|Win32.ActiveCfg = Release
+		{AA361C9D-EDA1-49EC-BBBF-B609C4B19E63}.Release|Win32.Build.0 = Release
+		{875F2AC6-41F9-42ED-8A04-615500929B98}.Debug|Win32.ActiveCfg = Debug|Win32
+		{875F2AC6-41F9-42ED-8A04-615500929B98}.Debug|Win32.Build.0 = Debug|Win32
+		{875F2AC6-41F9-42ED-8A04-615500929B98}.Release|Win32.ActiveCfg = Release|Win32
+		{875F2AC6-41F9-42ED-8A04-615500929B98}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

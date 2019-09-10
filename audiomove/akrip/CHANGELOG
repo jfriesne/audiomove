@@ -1,0 +1,70 @@
+v1.0rc2:
+	Added support to change Freedb protocol level.
+
+	Added basic HTTP proxy authorization support
+
+v0.96:
+	Added CDDB submit via HTTP support.  Should be used with freedb.org
+	only, as cddb.com will reject entries from non-approved programs,
+	and they're no longer certifying programs for the classic CDDB.
+
+	Fixed fairly obscure boundary condition when trying to jitter correct
+	short buffers (1 frame) filled with all zeros at end of CD.
+
+	Changed AKSHAREDMEM from union to struct, and changed the name of the
+	shared memory object to avoid conflicts.
+
+v0.95:
+	Added IOCTL_SCSI_GET_ADDRESS calls to the SCSI passthrough code
+	to get the host adapter number from the system.
+
+	MSVC project file added
+
+	CDDB non-proxy code can now use HTTP 1.0
+
+	Generation of retbuf.txt in CDDB code now configurable
+
+v0.94:
+	Cleaned up the "#ifdef _DEBUG" code considerably.
+
+	Now the SCSI pass through code tries the call to CreateFile with
+	and without the GENERIC_WRITE flag -- hopefully this will let the
+	call work on more machines.
+
+	The MSVC directory now contains an import lib created with a
+	relatively recent version of MSVC.
+
+	Optional paramater can be set via ModifyCDParms to save/read
+	info to/from cdplayer.ini when making calls to CDDB functions.
+	Set CDDB_OPT_USECDPLAYERINI to TRUE to enable the use of 
+	cdplayer.ini.
+
+	Added SPTIOpenCDHandle to scsi pass through code.  Specifically,
+	under NT/2000 I don't want to leave device handles open unless
+	GetCDHandle() has been explicitly called.
+
+v0.93:	
+	Added GENERIC_WRITE to to flags on the call to CreateFile in the
+	SCSI pass through code -- Win2K seems to need it, while NT (SP4+)
+	does not.
+
+	Added function CDDBGetServerList.  Provides a quick way to retrieve
+	the "sites" command from the configured CDDB server.
+
+v0.92:
+	Fixed a stupid bug in the Plextor (readd8.c) code.
+
+	Implemented minimal ASPI emulation layer for Windows NT/2K machines
+	without an ASPI manager installed.  If the DLL is unable to load
+	ASPI, it will check if it is able to use the NT SCSI pass through
+	IOCTL by sending an INQUIRY command to devices identified as 
+	DRIVE_CDROM by GetDriveType().
+	
+v0.91:
+        Added CDDB support.  The functions are GetCDDBDiskID, CDDBQuery,
+	CDDBGetDiskInfo, and CDDBSetOption.
+	
+	Added dummy "stub" functions for WNASPI functions when WNASPI32.DLL
+	can't be loaded.  Eliminates GPF when WNASPI32.DLL is not present.
+
+	Added GetAKRipDllVersion().

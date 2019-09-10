@@ -1,0 +1,14 @@
+Basic Installation
+==================
+
+These are generic build instructions.  AudioMove should be
+buildable under any OS that has a valid Qt 4.5.x development
+environment present.
+
+1) Make sure you have a Qt 4.5.x build environment set up on your machine.
+
+2) Run the included install.sh script:
+
+     source ./build-audiomove.sh
+
+3) In a few minutes, your AudioMove executable should be ready.

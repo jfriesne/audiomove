@@ -1,0 +1,602 @@
+/*
+** Copyright (C) 2004 Level Control Systems <jaf@lcsaudio.com>
+**
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+*/
+
+#include <fcntl.h>
+#include "audiomove/LibSndFileIOThread.h"
+#include "audiomove/MiscFunctions.h"
+
+#define DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE (0.99f)
+
+#if !defined(fmaxf) && defined(_MSC_VER)
+# define fmaxf muscleMax
+#endif
+
+namespace audiomove {
+
+static const String AUDIOMOVE_TEMP_SUFFIX = ".audiomove_temp";
+
+LibSndFileIOThread :: LibSndFileIOThread(const String & readPath) : _fileName(readPath), _numWriteStreams(AUDIO_STREAMS_SOURCE), _splitFiles(false), _inputFileFormat(AUDIO_FORMAT_SOURCE), _outputFileFormat(AUDIO_FORMAT_NORMALIZED), _fileSampleRate(AUDIO_RATE_SOURCE), _fileSampleWidth(AUDIO_WIDTH_SOURCE), _numFrames(0), _numStreams(0), _isComplete(false), _currentMaxOutputSample(1.0f/DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE), _biValid(false)
+{
+   // empty
+}
+
+LibSndFileIOThread :: LibSndFileIOThread(const String & checkPath, const String & writePath, const String & optInPlaceBasePath, uint32 writeFormat, uint32 writeSampleWidth, uint32 writeSampleRate, uint8 writeNumStreams, bool splitFiles, const SF_BROADCAST_INFO * optBI) : _checkPath(checkPath), _fileName(writePath), _optInPlaceBasePath(optInPlaceBasePath), _numWriteStreams(writeNumStreams), _splitFiles(splitFiles), _inputFileFormat(AUDIO_FORMAT_NORMALIZED), _outputFileFormat(writeFormat), _fileSampleRate(writeSampleRate), _fileSampleWidth(writeSampleWidth), _numFrames(0), _numStreams(writeNumStreams), _isComplete(false), _currentMaxOutputSample(1.0f/DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE), _biValid(optBI != NULL)
+{
+   if (_biValid) memcpy(&_bi, optBI, sizeof(_bi));
+}
+
+LibSndFileIOThread :: ~LibSndFileIOThread()
+{
+   DoCloseFiles(CLOSE_FLAG_FINAL|(_isComplete?0:CLOSE_FLAG_ERROR));
+   DeleteTempFiles();
+}
+
+void LibSndFileIOThread :: DeleteTempFiles()
+{
+   for (HashtableIterator<String, bool> iter(_tempFiles, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) (void) unlink(iter.GetKey()());
+   _tempFiles.Clear();
+}
+
+status_t LibSndFileIOThread :: OpenFile()
+{
+   CloseFile(CLOSE_FLAG_FINAL);  // paranoia
+   
+   SF_INFO info; memset(&info, 0, sizeof(info));
+   if (_numWriteStreams != AUDIO_STREAMS_SOURCE)
+   {
+      // Write mode: If we're going to create the file, then fill in our desired parameters for the file here
+      info.samplerate = _fileSampleRate;
+      info.channels   = _numWriteStreams;
+
+      switch(_outputFileFormat)
+      {
+         // FogBugz #3579:  don't use big-endian for WAV: the rest of the world can't handle it yet!
+         case AUDIO_FORMAT_WAV:  info.format = SF_FORMAT_WAV  | SF_ENDIAN_LITTLE; break;
+         case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;    break;
+
+         case AUDIO_FORMAT_FLAC: 
+            info.format = SF_FORMAT_FLAC;
+
+            // If the user chose a sample width that FLAC can't support, switch to one it can
+            switch(_fileSampleWidth)
+            {
+               case AUDIO_WIDTH_INT24: 
+               case AUDIO_WIDTH_INT16:
+               case AUDIO_WIDTH_INT8: 
+                  // do nothing, FLAC supports these widths natively
+               break;
+
+               default:
+                  _fileSampleWidth = AUDIO_WIDTH_INT24; 
+               break;
+            }
+         break;
+
+         case AUDIO_FORMAT_OGGVORBIS: 
+            info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
+         break;
+
+         case AUDIO_FORMAT_PAF_BE: case AUDIO_FORMAT_PAF_LE: 
+            info.format = SF_FORMAT_PAF | ((_outputFileFormat == AUDIO_FORMAT_PAF_BE) ? SF_ENDIAN_BIG : SF_ENDIAN_LITTLE);
+
+            // If the user chose a sample width that PAF can't support, switch to one it can
+            switch(_fileSampleWidth)
+            {
+               case AUDIO_WIDTH_INT24: 
+               case AUDIO_WIDTH_INT16:
+               case AUDIO_WIDTH_INT8: 
+                  // do nothing, PAF supports these widths natively
+               break;
+
+               default:
+                  _fileSampleWidth = AUDIO_WIDTH_INT24; 
+               break;
+            }
+         break;
+
+         default:  
+            return B_ERROR;  // we only support OGGVORBIS, FLAC, WAV, AIFF, and PAF output... for now anyway
+      }
+
+      if (_outputFileFormat != AUDIO_FORMAT_OGGVORBIS)  // Ogg Vorbis doesn't want to know about sample widths?
+      {
+         switch(_fileSampleWidth)
+         {
+            case AUDIO_WIDTH_DOUBLE: info.format |= SF_FORMAT_DOUBLE; break;
+            case AUDIO_WIDTH_FLOAT:  info.format |= SF_FORMAT_FLOAT;  break;
+            case AUDIO_WIDTH_INT32:  info.format |= SF_FORMAT_PCM_32; break;
+            case AUDIO_WIDTH_INT24:  info.format |= SF_FORMAT_PCM_24; break;
+            case AUDIO_WIDTH_INT16:  info.format |= SF_FORMAT_PCM_16; break;
+            case AUDIO_WIDTH_INT8:   info.format |= SF_FORMAT_PCM_S8; break;  // S8 is supported by FLAC, U8 isn't
+            default:                 info.format |= SF_FORMAT_FLOAT;  break;
+         }
+      }
+
+      if (EnsureFileFolderExists(_checkPath, false) != B_NO_ERROR) return B_ERROR;  // mount-point fix for v1.11
+      (void) EnsureFileFolderExists(_fileName, true);  // if the base directory exists, then it's okay to put sub-dirs under it
+
+      if ((_splitFiles)&&(_numWriteStreams > 1))
+      {
+          // New for AudioMove v1.15:  this mode writes each channel of audio to its own separate output file
+          info.channels = 1;
+          int lastDot = _fileName.LastIndexOf('.');
+          for (uint32 i=0; i<_numWriteStreams; i++)
+          {
+             String fileName = (lastDot>=0) ? (_fileName.Substring(0, lastDot)+String("_c%1").Arg(i+1)+_fileName.Substring(lastDot)) : (_fileName+String("_c%1").Arg(i+1));
+             SNDFILE * file = OpenFileForWriting(fileName, info);  // don't merge into the PutOutputFile() call!  This may change (fileName)!
+             if (PutOutputFile(fileName, file) != B_NO_ERROR) break;
+          }
+          if (_files.GetNumItems() == _numWriteStreams)
+          {
+             _numFrames = 0;  // no data written, yet!
+             return B_NO_ERROR;
+          }
+      }
+      else
+      { 
+         String fn = _fileName;
+         SNDFILE * file = OpenFileForWriting(fn, info);  // don't merge into the PutOutputFile() call!  This may change (fn)!
+         if (PutOutputFile(fn, file) == B_NO_ERROR)
+         {
+            _numFrames = 0;  // no data written, yet!
+            return B_NO_ERROR;
+         }
+      }
+   }
+   else 
+   {
+      SNDFILE * file = sf_open(_fileName(), SFM_READ, &info);
+      if (file)
+      {
+         if (_files.Put(_fileName, file) == B_NO_ERROR)
+         {
+            // Read mode:  extract attributes from libsndfile
+            switch(info.format & SF_FORMAT_TYPEMASK)
+            {
+               case SF_FORMAT_WAV:    _inputFileFormat = AUDIO_FORMAT_WAV;       break;
+               case SF_FORMAT_AIFF:   _inputFileFormat = AUDIO_FORMAT_AIFF;      break;
+               case SF_FORMAT_FLAC:   _inputFileFormat = AUDIO_FORMAT_FLAC;      break;
+               case SF_FORMAT_VORBIS: _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
+               case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE;
+               default:               _inputFileFormat = NUM_AUDIO_FORMATS;      break; // must be some other format that libsndfile knows, but we don't!
+            }
+
+            _fileSampleRate = info.samplerate;
+            _numFrames      = info.frames;
+            _numStreams     = info.channels;
+
+            switch(info.format & SF_FORMAT_SUBMASK)
+            {
+               case SF_FORMAT_DOUBLE: _fileSampleWidth = AUDIO_WIDTH_DOUBLE; break;
+               case SF_FORMAT_FLOAT:  _fileSampleWidth = AUDIO_WIDTH_FLOAT;  break;
+               case SF_FORMAT_PCM_32: _fileSampleWidth = AUDIO_WIDTH_INT32;  break;
+               case SF_FORMAT_PCM_24: _fileSampleWidth = AUDIO_WIDTH_INT24;  break;
+               case SF_FORMAT_PCM_16: _fileSampleWidth = AUDIO_WIDTH_INT16;  break;
+
+               case SF_FORMAT_PCM_S8: case SF_FORMAT_PCM_U8:
+                  _fileSampleWidth = AUDIO_WIDTH_INT8;  
+               break;
+
+               default:
+                  _fileSampleWidth = NUM_AUDIO_WIDTHS;
+               break;
+            }
+            return B_NO_ERROR;
+         }
+         else sf_close(file);  // don't remove it, it was only opened for reading!
+      }
+   }
+   CloseFile(CLOSE_FLAG_ERROR);
+
+   return B_ERROR;
+}
+
+status_t LibSndFileIOThread :: PutOutputFile(const String & fn, SNDFILE * file)
+{
+   if (file)
+   {
+      if (_files.Put(fn, file) == B_NO_ERROR)
+      {
+         if (_tempFiles.Put(fn, file) == B_NO_ERROR) return B_NO_ERROR;  // success!
+         (void) _files.Remove(fn);  // roll back
+      }
+      sf_close(file); 
+      unlink(fn());
+   }
+   return B_ERROR;
+}
+
+status_t LibSndFileIOThread :: GetBroadcastInfo(SF_BROADCAST_INFO & bi)
+{
+   // Try to get the broadcast-info from the file... this will only work with certain WAV files, of course
+   if ((_files.HasItems())&&(sf_command(*_files.GetFirstValue(), SFC_GET_BROADCAST_INFO, &bi, sizeof(bi)) == SF_TRUE)) return B_NO_ERROR;
+   else
+   {
+      memset(&bi, 0, sizeof(bi));
+      return B_ERROR;
+   }
+}
+
+void LibSndFileIOThread :: CloseFile(uint32 closeFlags)
+{
+   DoCloseFiles(closeFlags);
+}
+
+void LibSndFileIOThread :: RescaleAudioBuffer(float * buf, uint32 numFloats, float scaleBy) const
+{
+   if (scaleBy != 1.0f) 
+   {
+      /* Do the bulk of the rescaling in an 8-way unrolled loop, for extra efficiency */
+      uint32 leftover = numFloats&0x07;
+      for (int32 i=(numFloats>>3)-1; i>=0; --i)
+      {
+         buf[0] *= scaleBy; buf[1] *= scaleBy; buf[2] *= scaleBy; buf[3] *= scaleBy;
+         buf[4] *= scaleBy; buf[5] *= scaleBy; buf[6] *= scaleBy; buf[7] *= scaleBy;
+         buf += 8;
+      }
+
+      /* And handle any leftover samples individually */
+      while(leftover--) *buf++ *= scaleBy;
+   }
+}
+
+status_t LibSndFileIOThread :: RescaleAudioSegment(uint64 startOffset, uint64 numFrames, float scaleBy, float * tempBuf, uint32 tempBufSize)
+{
+   if (scaleBy != 1.0f)  // unlikely, but why not check?
+   {
+      uint64 tempSizeFrames = tempBufSize/_numStreams;
+      while(numFrames > 0)
+      {
+         uint32 numFramesToRead = muscleMin(numFrames, tempSizeFrames);
+         uint32 numSamples      = numFramesToRead*_numStreams;
+
+         if (DoSeekFiles(startOffset) != B_NO_ERROR) return B_ERROR;
+         if (DoReadFromFiles(tempBuf, numSamples) != B_NO_ERROR) return B_ERROR;
+         RescaleAudioBuffer(tempBuf, numSamples, scaleBy);
+         if (DoSeekFiles(startOffset) != B_NO_ERROR) return B_ERROR;
+         if (DoWriteToFiles(tempBuf, numSamples) != B_NO_ERROR) return B_ERROR;
+
+         startOffset += numFramesToRead;
+         numFrames   -= numFramesToRead;
+      }
+   }
+   return B_NO_ERROR;
+}
+
+bool LibSndFileIOThread :: IsOkayToRescale() const
+{
+   // No need to rescale if our samples are floating point, since they can't clip anyway
+   if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
+
+   // These audio formats don't support seeking while in write mode, so we can't rescale them
+   if ((_outputFileFormat == AUDIO_FORMAT_FLAC)||(_outputFileFormat == AUDIO_FORMAT_OGGVORBIS)) return false;
+
+   // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
+   if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;
+
+   return true;
+}
+
+ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QString & retErrStr, bool isLastBuffer)
+{
+   if ((_files.HasItems())&&(buf()))
+   {
+      const uint32 numBytes = buf()->GetNumBytes();
+
+      if ((numBytes % sizeof(float)) == 0)
+      {
+         float * samples = (float *) buf()->GetBuffer();
+         const uint32 numSamples = numBytes/sizeof(float);
+
+         if (_numWriteStreams == AUDIO_STREAMS_SOURCE)
+         {
+            // Read from the input file into the buffer
+            SNDFILE * file = *_files.GetFirstValue();
+            int32 readSamples = sf_read_float(file, samples, numSamples);
+            if (sf_error(file) == SF_ERR_NO_ERROR)
+            {
+               buf()->SetNumBytes(readSamples*sizeof(float), true);
+               if (isLastBuffer) 
+               {
+                  _isComplete = true;
+                  CloseFile(CLOSE_FLAG_FINAL);  // close file now so that it isn't locked
+               }
+               return buf;
+            }
+            else retErrStr = qApp->translate("LibSndFileIOThread", "Problem reading from file");
+         }
+         else
+         {
+            if (IsOkayToRescale())
+            {
+               // Gotta check the output for samples outside the allowed [-1.0f,1.0f] range!  If
+               // we find any, we'll need to handle it by rescaling the audio; otherwise there will
+               // be clipping in the output, which would be a bad thing
+               float maxSampleValue = 0.0f;
+               for (uint32 i=0; i<numSamples; i++) maxSampleValue = fmaxf(maxSampleValue, fabsf(samples[i])); 
+               if (maxSampleValue/_currentMaxOutputSample > 1.0f)
+               {
+                  // Whoops!  We need to rescale everything down a bit, or we'll suffer from clipping!
+                  _currentMaxOutputSample = maxSampleValue;
+                  _maxSamplesRecord.Put(_numFrames, _currentMaxOutputSample);
+               }
+               RescaleAudioBuffer(samples, numSamples, 1.0f/_currentMaxOutputSample);
+            }
+
+            if (DoWriteToFiles(samples, numSamples) == B_NO_ERROR)
+            {
+               _numFrames += (numSamples/_numStreams);
+               if (isLastBuffer) 
+               {
+                  if (_currentMaxOutputSample != DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE)
+                  {
+                     static const uint32 TEMP_BUF_SIZE = 128*1024;
+                     float * tempBuf = new float[TEMP_BUF_SIZE];
+                     float finalScaling = 1.0f/_currentMaxOutputSample;
+                     int64 prevOffset  = 0;
+                     float prevMaxSample = DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE;
+                     for (HashtableIterator<int64, float> iter(_maxSamplesRecord); iter.HasData(); iter++)
+                     {
+                        int64 nextOffset    = iter.GetKey();
+                        float nextMaxSample = iter.GetValue();
+                        if (RescaleAudioSegment(prevOffset, nextOffset-prevOffset, finalScaling*prevMaxSample, tempBuf, TEMP_BUF_SIZE) != B_NO_ERROR)
+                        {
+                           retErrStr = qApp->translate("LibSndFileIOThread", "Error rescaling segment");
+                           break;
+                        } 
+
+                        prevOffset    = nextOffset;
+                        prevMaxSample = nextMaxSample;
+                     }
+                     delete [] tempBuf;
+                  }
+                  if (retErrStr.length() == 0) _isComplete = true;
+                  CloseFile(((retErrStr.length()>0)?CLOSE_FLAG_ERROR:0)|CLOSE_FLAG_FINAL);  // close file now so that it is ready for use immediately
+               }
+               return (retErrStr.length() > 0) ? ByteBufferRef() : buf;
+            }
+            else retErrStr = qApp->translate("LibSndFileIOThread", "Problem writing to file");
+         }
+      }
+      else retErrStr = qApp->translate("LibSndFileIOThread", "Bad chunk length %1").arg(numBytes);
+   }
+
+   if (isLastBuffer) 
+   {
+      if (retErrStr.length() == 0) _isComplete = true;
+      CloseFile(((retErrStr.length()>0)?CLOSE_FLAG_ERROR:0)|CLOSE_FLAG_FINAL);  // close file now so that it isn't locked
+   }
+   else CloseFile(CLOSE_FLAG_ERROR);
+
+   return ByteBufferRef();  // error!
+}
+
+SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const SF_INFO & info) const
+{
+   // Try to find a temp-file name that doesn't already exist in the output folder
+   String fileName = userFileName + AUDIOMOVE_TEMP_SUFFIX;
+   {
+      FILE * fpTest = fopen(fileName(), "r");
+      if ((fpTest)||(_tempFiles.ContainsKey(fileName)))
+      {
+         if (fpTest) fclose(fpTest);
+
+         // Hmm, there's already a temp file here by that name... lets try a bit harder to find something unique.
+         bool okayToGo = false;
+         for (uint32 i=2; i<10000; i++)
+         {
+            String fn = fileName + String("_%1").Arg(i);
+            if (_tempFiles.ContainsKey(fn) == false)
+            {
+               FILE * fpTest2 = fopen(fn(), "r");
+               if (fpTest2) fclose(fpTest2);
+               else
+               {
+                  okayToGo = true;
+                  fileName = fn;
+                  break;
+               } 
+            }
+         }
+         if (okayToGo == false) return NULL;  // couldn't find a free temp file name!?
+      }
+   }
+   userFileName = fileName;
+
+   const int openMode = IsOkayToRescale() ? SFM_RDWR : SFM_WRITE;  // if fixed-point, we may need to re-scale later
+   SF_INFO tempInfo = info;
+   SNDFILE * file = sf_open(fileName(), openMode, &tempInfo);
+   if (file == NULL)
+   {
+      // No luck?  Okay, let's try again, without the endian requirement
+      tempInfo = info;
+      tempInfo.format &= ~SF_FORMAT_ENDMASK;
+      file = sf_open(fileName(), openMode, &tempInfo);
+   }
+
+   // If we have a valid broadcast-info chunk, try to write it to the file
+   if ((_biValid)&&(file))
+   {
+      // Note that this command may fail with older versions of libsndfile, because
+      // we're in SFM_RDWR mode and it requires SFM_WRITE.  You can fix the problem
+      // by hand-tweaking line 1077 of libsndfile's sndfile.c, or wait for a new
+      // version of libsndfile to come out (I've emailed Erik about the problem) 
+      (void) sf_command(file, SFC_SET_BROADCAST_INFO, (void *) &_bi, sizeof(_bi));
+   }
+   return file;
+}
+
+status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, const String & fn)
+{
+   if (_numWriteStreams != AUDIO_STREAMS_SOURCE)  // we never plan to overwrite anything when in input mode, of course
+   {
+      if ((_splitFiles)&&(_numWriteStreams > 1))
+      {
+          // New for AudioMove v1.15:  this mode writes each channel of audio to its own separate output file
+          int lastDot = _fileName.LastIndexOf('.');
+          for (uint32 i=0; i<_numWriteStreams; i++)
+          {
+             String fileName = (lastDot>=0) ? (_fileName.Substring(0, lastDot)+String("_c%1").Arg(i+1)+_fileName.Substring(lastDot)) : (_fileName+String("_c%1").Arg(i+1));
+             FILE * fpCheck = fopen(fileName(), "rb");
+             if (fpCheck)
+             {
+                fclose(fpCheck);
+                if (msg.AddString(fn, fileName) != B_NO_ERROR) return B_ERROR;
+             } 
+          }
+      }
+      else
+      {
+         FILE * fpCheck = fopen(_fileName(), "rb");
+         if (fpCheck)
+         {
+            fclose(fpCheck);
+            if (msg.AddString(fn, _fileName) != B_NO_ERROR) return B_ERROR;
+         }
+      }
+   }
+   return B_NO_ERROR;
+}
+
+status_t LibSndFileIOThread :: DoReadFromFiles(float * samples, uint32 numSamples)
+{
+   uint32 numStreams = _files.GetNumItems();
+   switch(numStreams)
+   {
+      case 0:
+         return B_ERROR;
+
+      case 1: 
+         // Easy case:  we are just reading from a single file
+         return (sf_read_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR;
+
+      default:
+      {
+         // Harder case:  we are merging in data from multiple sub-files; we need to read one stream from each
+         uint32 numFrames = numSamples/numStreams;
+         if (_splitBuf.SetNumBytes(numFrames*sizeof(float), false) != B_NO_ERROR) return B_ERROR;  // space for one channel
+
+         float * in = (float *) _splitBuf.GetBuffer();
+         uint32 i=0;
+         for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+         {
+            if (sf_read_float(iter.GetValue(), in, numFrames) != numFrames) return B_ERROR;
+            float * out = &samples[i];
+            for (uint32 j=0; j<numFrames; j++) out[j*numStreams] = in[j];
+            i++;
+         }
+         return B_NO_ERROR;
+      }
+   }
+}
+
+status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numSamples)
+{
+   if (_outputFileFormat == AUDIO_FORMAT_OGGVORBIS)
+   {
+      const uint32 MAX_OGG_SAMPLES_PER_CALL = 8*1024;  // FogBugz #10795:  work-around for crash in libvorbis if we try to write too many frames at once!
+      if (numSamples > MAX_OGG_SAMPLES_PER_CALL)
+      {
+         while(numSamples > 0)
+         {
+            uint32 numSamplesToWrite = muscleMin(numSamples, MAX_OGG_SAMPLES_PER_CALL);
+            if (DoWriteToFiles(samples, numSamplesToWrite) != B_NO_ERROR) return B_ERROR;
+            samples    += numSamplesToWrite;
+            numSamples -= numSamplesToWrite;
+         }
+         return B_NO_ERROR;
+      }
+   }
+
+   uint32 numStreams = _files.GetNumItems();
+   switch(numStreams)
+   {
+      case 0:
+         return B_ERROR;
+
+      case 1: 
+         // Easy case:  we are just writing to a single file
+         return (sf_write_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR;
+
+      default:
+      {
+         // Harder case:  we are splitting out to multiple sub-files; we need to write one stream to each
+         uint32 numFrames = numSamples/numStreams;
+         if (_splitBuf.SetNumBytes(numFrames*sizeof(float), false) != B_NO_ERROR) return B_ERROR;  // space for one channel
+
+         float * out = (float *) _splitBuf.GetBuffer();
+         uint32 i = 0;
+         for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+         {
+            const float * in = &samples[i];
+            for (uint32 j=0; j<numFrames; j++) out[j] = in[j*numStreams];
+            if (sf_write_float(iter.GetValue(), out, numFrames) != numFrames) return B_ERROR;
+            i++;
+         }
+         return B_NO_ERROR;
+      }
+   }
+}
+
+status_t LibSndFileIOThread :: DoSeekFiles(uint64 offset)
+{
+   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) 
+      if (sf_seek(iter.GetValue(), offset, SEEK_SET) != (sf_count_t)offset) return B_ERROR;
+   return B_NO_ERROR;
+}
+
+void LibSndFileIOThread :: DoCloseFiles(uint32 closeFlags)
+{
+   bool isFinal = ((closeFlags & CLOSE_FLAG_FINAL) != 0);
+   bool isError = ((closeFlags & CLOSE_FLAG_ERROR) != 0);
+   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+   {
+      // close the file FIRST to avoid any file-locking problems in Windows, etc
+      sf_close(iter.GetValue());
+
+      // For output mode, we need to clean up by renaming/deleting the output files as appropriate
+      if ((isFinal)&&(_numWriteStreams != AUDIO_STREAMS_SOURCE))
+      {
+         const String & tmpFileName = iter.GetKey();
+
+         if (isError == false)
+         {
+            // Success!  We want to safely replace the old/original file with our new temp file
+            int32 suffixIdx = tmpFileName.LastIndexOf(AUDIOMOVE_TEMP_SUFFIX);
+            if (suffixIdx >= 0)
+            {
+               String origFileName = tmpFileName.Substring(0, suffixIdx);
+               (void) unlink(origFileName());
+               (void) rename(tmpFileName(), origFileName());
+               _tempFiles.Remove(tmpFileName);
+
+               // For in-place operations where we split a file, be sure to delete the original/unsplit file also
+               if ((_splitFiles)&&(_numWriteStreams > 1)&&(_optInPlaceBasePath.HasChars()))
+               {
+                  unlink(_optInPlaceBasePath());
+                  _optInPlaceBasePath.Clear();
+               }
+            }
+         }
+      }
+   }
+   _files.Clear();
+   if (isFinal) DeleteTempFiles();  // make sure they get deleted on final close, even if we didn't have any file handles still
+}
+
+};  // end namespace audiomove
