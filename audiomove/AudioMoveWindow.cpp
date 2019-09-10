@@ -1298,7 +1298,7 @@ QString AudioMoveWindow :: GetFileDurationName(int64 frames, uint32 samplesPerSe
       uint64 numSeconds = frames/samplesPerSecond;
       uint64 numMinutes = numSeconds/60;  numSeconds = numSeconds%60;
       uint64 numHours   = numMinutes/60;  numMinutes = numMinutes%60;
-      char buf[256]; sprintf(buf, UINT64_FORMAT_SPEC"h %02"UINT64_FORMAT_SPEC_NOPERCENT"m %02"UINT64_FORMAT_SPEC_NOPERCENT"s", numHours, numMinutes, numSeconds);
+      char buf[256]; sprintf(buf, UINT64_FORMAT_SPEC"h %02" UINT64_FORMAT_SPEC_NOPERCENT"m %02" UINT64_FORMAT_SPEC_NOPERCENT"s", numHours, numMinutes, numSeconds);
       const char * s = buf;
       while((*s != '\0')&&(muscleInRange(*s, '1', '9') == false)) s++;
       return (*s ? ToQ(s) : ToQ("--"));
@@ -1490,7 +1490,7 @@ void AudioMoveWindow :: ShowAddFilesDialog()
 {
    if (_addFiles == NULL) 
    {
-      _addFiles = new AudioMoveFileDialog("audiofiles", QString::null, QFileDialog::ExistingFiles, this);
+      _addFiles = new AudioMoveFileDialog("audiofiles", QString(), QFileDialog::ExistingFiles, this);
       connect(_addFiles, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DialogAddFiles(const QStringList &)));
    }
    _addFiles->selectFile(LocalToQ(""));
@@ -1503,7 +1503,7 @@ void AudioMoveWindow :: ShowAddFoldersDialog()
 {
    if (_addFolders == NULL) 
    {
-      _addFolders = new AudioMoveFileDialog("audiofolders", QString::null, QFileDialog::DirectoryOnly, this);
+      _addFolders = new AudioMoveFileDialog("audiofolders", QString(), QFileDialog::DirectoryOnly, this);
       connect(_addFolders, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DialogAddFolder(const QStringList &)));
    }
    _addFolders->selectFile(LocalToQ(""));
@@ -1652,7 +1652,7 @@ void AudioMoveWindow :: ShowDestDialog()
 {
    if (_chooseDestDir == NULL) 
    {
-      _chooseDestDir = new AudioMoveFileDialog("dest", QString::null, QFileDialog::DirectoryOnly, this);
+      _chooseDestDir = new AudioMoveFileDialog("dest", QString(), QFileDialog::DirectoryOnly, this);
       connect(_chooseDestDir, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DestinationDirSelected(const QStringList &)));
    }
    _chooseDestDir->selectFile(LocalToQ(""));

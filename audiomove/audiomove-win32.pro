@@ -27,7 +27,7 @@ HEADERS     = AudioMoveWindow.h \
 
 TARGET      = AudioMove
 
-INCLUDEPATH = . $$SUBMODULESDIR $$SUBMODULESDIR/muscle $$SUBMODULESDIR/libsndfile/src $$SUBMODULESDIR/libsamplerate/src $(QTDIR)/include
+INCLUDEPATH = .. $$SUBMODULESDIR $$SUBMODULESDIR/muscle $$SUBMODULESDIR/libsndfile/src $$SUBMODULESDIR/libsamplerate/src $(QTDIR)/include
 
 OBJECTS_DIR = objects
 

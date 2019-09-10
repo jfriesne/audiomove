@@ -17,7 +17,8 @@ echo "************************************************************"
 echo "* Building libsamplerate..."
 echo "************************************************************"
 pushd libsamplerate
-touch_without_race_condition config* aclocal* Makefile*
+./autogen.sh
+#touch_without_race_condition config* aclocal* Makefile*
 ./configure --enable-shared=no --prefix=`pwd`/temp_install
 make install
 popd
@@ -26,8 +27,9 @@ echo "************************************************************"
 echo "* Building ogg..."
 echo "************************************************************"
 pushd ogg
+./autogen.sh
 ./configure --enable-shared=no --prefix=`pwd`/temp_install
-touch_without_race_condition config* aclocal* Makefile*
+#touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
 
@@ -36,7 +38,8 @@ echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
 ./autogen.sh --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install
-touch_without_race_condition config* aclocal* Makefile*
+./configure
+#touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
 
@@ -44,8 +47,9 @@ echo "************************************************************"
 echo "* Building flac..."
 echo "************************************************************"
 pushd flac
+./autogen.sh
 ./configure --enable-shared=no --prefix=`pwd`/temp_install --with-ogg=`pwd`/../ogg/temp_install --disable-asm-optimizations
-touch_without_race_condition config* aclocal* Makefile*
+#touch_without_race_condition config* aclocal* Makefile*
 make install
 popd
 
@@ -61,7 +65,8 @@ export VORBISENC_CFLAGS='-I'`pwd`'/../vorbis/temp_install/include'
 export VORBISENC_LIBS='-L'`pwd`'/../vorbis/temp_install/lib -lvorbisenc'
 export FLAC_CFLAGS='-I'`pwd`'/../flac/temp_install/include'
 export FLAC_LIBS='-L'`pwd`'/../flac/temp_install/lib -lflac'
-touch_without_race_condition config* aclocal* Makefile*
+#touch_without_race_condition config* aclocal* Makefile*
+./autogen.sh
 ./configure --enable-shared=no --enable-external-libs --prefix=`pwd`/temp_install
 make install
 popd

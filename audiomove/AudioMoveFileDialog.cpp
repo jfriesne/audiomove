@@ -69,7 +69,7 @@ enum {
 AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QString & filter, QFileDialog::FileMode mode, QWidget * parent) : QFileDialog(parent), _fileCategory(fileCategory.Prepend("dir_")), _lastHotkeySelectTime(0), _prevHotkeySelection(NULL), _directoryChangeCheckPending(false)
 {
    QStringList filters;
-   if (filter != QString::null) filters.push_back(filter);
+   if (filter != QString()) filters.push_back(filter);
    filters.push_back(tr("Any File") + LocalToQ(" (*)"));
    DoInit(mode, filters);
 }
@@ -124,7 +124,11 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
 
    // FogBugz #4373:  Watch combo boxes for changes to the directory (Qt 4.3 STILL doesn't have the support we need :^P )
    {
+#if (QT_VERSION >= 0x050000)
+      QList<QComboBox*> combos = findChildren<QComboBox*>();
+#else
       QList<QComboBox*> combos = qFindChildren<QComboBox*>(this);
+#endif
       for (int i=0; i<combos.size(); ++i)
       {
          QComboBox * box = combos[i];
@@ -143,7 +147,11 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
 
    // FogBugz #4472:  We need to update our hot-selects whenever the user changes the file name
    {
+#if (QT_VERSION >= 0x050000)
+      QList<QLineEdit*> ledits = findChildren<QLineEdit*>();
+#else
       QList<QLineEdit*> ledits = qFindChildren<QLineEdit*>(this);
+#endif
       for (int i=ledits.size()-1; i>=0; i--) connect(ledits[i], SIGNAL(textEdited(QString)), this, SLOT(CheckForDirectoryChangeAsync()));  // FogBugz #4472
    }
 
@@ -155,9 +163,14 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
 
    // We'll check for file-overwrites ourself, thank you very much
    // That way we can give better info, and we don't risk getting stuck in a modal requester
-   setConfirmOverwrite(false);
 
+#if (QT_VERSION >= 0x050000)
+   setOption(DontConfirmOverwrite, true);
+   setNameFilters(filters);
+#else
+   setConfirmOverwrite(false);
    setFilters(filters);
+#endif
 
    setFileMode(mode);
    connect(this, SIGNAL(filesSelected(const QStringList &)), SLOT(CheckForOverwrite(const QStringList &)));
@@ -195,11 +208,19 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
       _recentFilesTreeWidget->setHeaderLabels(sl);
 
       QHeaderView * h = _recentFilesTreeWidget->header();
+#if (QT_VERSION >= 0x050000)
+      h->setSectionsMovable(false);
+      h->setSectionsClickable(false);
+      h->setSectionResizeMode(RECENT_FILE_COLUMN_HOTKEY,   QHeaderView::ResizeToContents);
+      h->setSectionResizeMode(RECENT_FILE_COLUMN_FILENAME, QHeaderView::Stretch);
+      h->setSectionResizeMode(RECENT_FILE_COLUMN_DELETE,   QHeaderView::ResizeToContents);
+#else
       h->setMovable(false);
       h->setClickable(false);
       h->setResizeMode(RECENT_FILE_COLUMN_HOTKEY,   QHeaderView::ResizeToContents);
       h->setResizeMode(RECENT_FILE_COLUMN_FILENAME, QHeaderView::Stretch);
       h->setResizeMode(RECENT_FILE_COLUMN_DELETE,   QHeaderView::ResizeToContents);
+#endif
       h->setStretchLastSection(false);
 
       QTreeWidgetItem * temp = new QTreeWidgetItem(_recentFilesTreeWidget);  // necessary for sizeHintForRow(0) to give us a valid result
@@ -345,9 +366,19 @@ void AudioMoveFileDialog :: LoadRecentListFromRegistry()
 
 static QString GetExecutableName()
 {
+#if (QT_VERSION >= 0x050000)
+   if (qApp->arguments().size() > 0)
+#else
    if (qApp->argc() > 0)
+#endif
    {
+
+#if (QT_VERSION >= 0x050000)
+      String exeName(qApp->arguments()[0].toUtf8().constData());
+#else
       String exeName(qApp->argv()[0]);
+#endif
+
 #ifdef __APPLE__
       exeName = exeName.Substring(0, ".app");
 #endif
@@ -501,14 +532,17 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
          for (int i=_recentFilesTreeWidget->topLevelItemCount()-1; i>=0; i--)
          {
             QTreeWidgetItem * twi = _recentFilesTreeWidget->topLevelItem(i);
+#if (QT_VERSION >= 0x050000)
+            if (twi->isSelected())
+#else
             if (_recentFilesTreeWidget->isItemSelected(twi))
+#endif
             {
                const Queue<String> & subList = GetFilePathsForItem(twi);
                for (int32 j=subList.GetNumItems()-1; j>=0; j--) temp.Put(subList[j], true); 
             }
          }
          temp.SortByKey();
-         const String * next;
          for (HashtableIterator<String, bool> iter(temp); iter.HasData(); iter++) sl.AddTail(iter.GetKey());
       }
 
@@ -592,7 +626,12 @@ bool AudioMoveFileDialog :: eventFilter(QObject * watched, QEvent * e)
                   _recentFilesTreeWidget->clearSelection();
                   item->setSelected(true);
                   _recentFilesTreeWidget->setFocus();
-                  if ((_recentFilesTreeWidget->isItemSelected(item))&&(_prevHotkeySelection == item)&&(_lastHotkeySelectTime+250000 >= GetRunTime64())) 
+#if (QT_VERSION >= 0x050000)
+                  const bool isItemSel = item->isSelected();
+#else
+                  const bool isItemSel = _recentFilesTreeWidget->isItemSelected(item);
+#endif
+                  if ((isItemSel)&&(_prevHotkeySelection == item)&&(_lastHotkeySelectTime+250000 >= GetRunTime64()))
                   {
                      _lastHotkeySelectTime = 0;
                      _prevHotkeySelection = NULL;
@@ -629,7 +668,11 @@ QTreeWidgetItem * AudioMoveFileDialog :: GetSelectedRecentFileItem() const
    for (int i=_recentFilesTreeWidget->topLevelItemCount()-1; i>=0; i--)
    {
       QTreeWidgetItem * item = _recentFilesTreeWidget->topLevelItem(i);
+#if (QT_VERSION >= 0x050000)
+      if (item->isSelected()) return item;
+#else
       if (_recentFilesTreeWidget->isItemSelected(item)) return item;
+#endif
    }
    return NULL;
 }
@@ -722,7 +765,7 @@ public:
          _ejectIcon.addPixmap(QPixmap((const char **) eject_sel_xpm), QIcon::Selected, QIcon::Off);
       }
       setText(RECENT_FILE_COLUMN_FILENAME, displayStr);
-      setText(RECENT_FILE_COLUMN_HOTKEY, (QString)ks);
+      setText(RECENT_FILE_COLUMN_HOTKEY, ks.toString());
       setIcon(RECENT_FILE_COLUMN_DELETE, _ejectIcon);
    }
 
@@ -855,6 +898,15 @@ QString AudioMoveFileDialog :: GetDirName(const QDir & dir, const QString & defV
    else return defVal;
 }
 
+static int StringWidth(const QFontMetrics & fm, const QString & s)
+{
+#if (QT_VERSION >= 0x050B00)
+   return fm.horizontalAdvance(s);
+#else
+   return fm.width(s);
+#endif
+}
+
 void AudioMoveFileDialog :: PopupMenuResult(int, int whichButton, int menuID)
 {
    if ((menuID >= 0)&&(muscleInRange(whichButton, 0, NUM_HOT_BUTTONS-1)))
@@ -870,10 +922,11 @@ void AudioMoveFileDialog :: PopupMenuResult(int, int whichButton, int menuID)
 #else
          QString ellipses = QChar(0x26, 0x20);
 #endif
-         int labWidth = fm.width(qlabel);
+
+         const int labWidth = StringWidth(fm, qlabel);
          if (labWidth > maxWidth)
          {
-            while((qlabel.length()>0)&&(fm.width(qlabel+ellipses) > maxWidth)) qlabel = qlabel.left(qlabel.length()-1);
+            while((qlabel.length()>0)&&(StringWidth(fm,qlabel+ellipses) > maxWidth)) qlabel = qlabel.left(qlabel.length()-1);
             qlabel += ellipses;
          }
          UpdateHotButton(whichButton, qlabel, FromQ(_lastDirectory.absolutePath()));
