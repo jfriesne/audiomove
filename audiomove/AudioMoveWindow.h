@@ -226,6 +226,8 @@ private slots:
    void ConvertInPlaceWarningOptionSelected(int button);
    void UpdateConfirmationState();
    void ShowConfirmationDialog();
+   void ScheduleUpdateComboBoxBackgrounds();
+   void UpdateComboBoxBackgrounds();
 
 private:
    friend class AudioMoveItem;
@@ -287,6 +289,9 @@ private:
    void FinalizePendingConfirmations(uint32 newState, const QString * optErrStr);
    void DeleteAudioMoveItem(uint32 nextKey, AudioMoveItem * next);
 
+   bool IsTargetSampleRateSupported() const;
+   bool IsTargetSampleWidthSupported() const;
+
    QTimer _updateOutputPathTimer;
    AudioMoveTreeWidget * _processList;
    QStackedWidget * _destinationStack;
@@ -326,6 +331,7 @@ private:
    AudioMoveConfirmationDialog * _confirmationDialog;
 
    AudioSetupThread * _audioSetupThread;
+   bool _updateComboBoxBackgroundsPending;
 };
 
 };  // end namespace audiomove

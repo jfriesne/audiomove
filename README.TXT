@@ -13,7 +13,7 @@ What can AudioMove do?
 
 AudioMove can change the file's format from (any format that libsndfile can read) to WAV, AIFF, FLAC, or OGG format.
 
-AudioMove can change the file's sampling rate from (any rate that libsndfile can read) to a number of output sampling rates, ranging from 11.025kHz to 192kHz.
+AudioMove can change the file's sampling rate from (any rate that libsndfile can read) to a number of output sampling rates, ranging from 8kHz to 192kHz.
 
 AudioMove can change the file's sample width from (any width that libsndfile can read) to 8, 16, 24, or 32 bit, floating point, or double-precision floating point format.
 
@@ -97,7 +97,7 @@ format     | Specify the output file format.  Possible values are AIFF,
 destformat | WAV, FLAC, OGG, or Source.  e.g. destformat=AIFF
            |
 rate       | Specify the output files' sampling rate.  Possible values are
-destrate   | 11, 22, 44, 48, 88, 96, 176, 192, or Source.  e.g. destrate=44
+destrate   | 8, 11, 12, 16, 22, 24, 44, 48, 88, 96, 176, 192, or Source.  e.g. destrate=44
            |
 width      | Specify the output files' sample width.  Possible values are
 destwidth  | 8, 16, 32, float, or Source.  e.g. destwidth=Source
@@ -148,6 +148,10 @@ History
 v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
                    for easier development.
                  - Updated the code to compile under either Qt 4.x or Qt 5.x.
+                 - Added .W64, .CAF, .RF64, and .OPUS as output-format options
+                 - Added 8kHz, 12kHz, 16kHz, and 24kHz as output-rate options
+                 - "Sample Rate" combo box now turns red if set to a known-not-to-work setting
+                   for the current Output Format (e.g. 96kHz for Ogg/Opus)
 
 v1.21 5/19/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format

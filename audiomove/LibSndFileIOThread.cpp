@@ -109,11 +109,16 @@ status_t LibSndFileIOThread :: OpenFile()
             }
          break;
 
+         case AUDIO_FORMAT_WAV64:    info.format = SF_FORMAT_W64  | SF_ENDIAN_LITTLE; break;
+         case AUDIO_FORMAT_CAF:      info.format = SF_FORMAT_CAF  | SF_ENDIAN_BIG;    break;
+         case AUDIO_FORMAT_RF64:     info.format = SF_FORMAT_RF64 | SF_ENDIAN_LITTLE; break;
+         case AUDIO_FORMAT_OGGOPUS:  info.format = SF_FORMAT_OGG  | SF_FORMAT_OPUS;   break;
+
          default:  
-            return B_ERROR;  // we only support OGGVORBIS, FLAC, WAV, AIFF, and PAF output... for now anyway
+            return B_ERROR;  // we only support the above-listed audio formats for output... for now anyway
       }
 
-      if (_outputFileFormat != AUDIO_FORMAT_OGGVORBIS)  // Ogg Vorbis doesn't want to know about sample widths?
+      if ((_outputFileFormat != AUDIO_FORMAT_OGGVORBIS)&&(_outputFileFormat != AUDIO_FORMAT_OGGOPUS))  // Ogg doesn't want to know about sample widths?
       {
          switch(_fileSampleWidth)
          {
@@ -173,6 +178,10 @@ status_t LibSndFileIOThread :: OpenFile()
                case SF_FORMAT_FLAC:   _inputFileFormat = AUDIO_FORMAT_FLAC;      break;
                case SF_FORMAT_VORBIS: _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
                case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE;
+               case SF_FORMAT_W64:    _inputFileFormat = AUDIO_FORMAT_WAV64;     break;
+               case SF_FORMAT_CAF:    _inputFileFormat = AUDIO_FORMAT_CAF;       break;
+               case SF_FORMAT_RF64:   _inputFileFormat = AUDIO_FORMAT_RF64;      break;
+               case SF_FORMAT_OPUS:   _inputFileFormat = AUDIO_FORMAT_OGGOPUS;   break;
                default:               _inputFileFormat = NUM_AUDIO_FORMATS;      break; // must be some other format that libsndfile knows, but we don't!
             }
 
@@ -284,7 +293,7 @@ bool LibSndFileIOThread :: IsOkayToRescale() const
    if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
 
    // These audio formats don't support seeking while in write mode, so we can't rescale them
-   if ((_outputFileFormat == AUDIO_FORMAT_FLAC)||(_outputFileFormat == AUDIO_FORMAT_OGGVORBIS)) return false;
+   if ((_outputFileFormat == AUDIO_FORMAT_FLAC)||(_outputFileFormat == AUDIO_FORMAT_OGGVORBIS)||(_outputFileFormat == AUDIO_FORMAT_OGGOPUS)) return false;
 
    // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
    if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;

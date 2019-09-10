@@ -277,7 +277,16 @@ protected:
             {
                switch(targetFormat)
                {
-                  case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_AIFF: case AUDIO_FORMAT_FLAC: case AUDIO_FORMAT_OGGVORBIS: case AUDIO_FORMAT_PAF_BE: case AUDIO_FORMAT_PAF_LE:
+                  case AUDIO_FORMAT_WAV:
+                  case AUDIO_FORMAT_AIFF: 
+                  case AUDIO_FORMAT_FLAC:
+                  case AUDIO_FORMAT_OGGVORBIS:
+                  case AUDIO_FORMAT_PAF_BE:
+                  case AUDIO_FORMAT_PAF_LE:
+                  case AUDIO_FORMAT_WAV64:
+                  case AUDIO_FORMAT_CAF:
+                  case AUDIO_FORMAT_RF64:
+                  case AUDIO_FORMAT_OGGOPUS:
                   {
                      String odd = origDestDir;
                      if (odd.EndsWith("/") == false) odd += '/';
@@ -326,6 +335,10 @@ protected:
          case AUDIO_FORMAT_OGGVORBIS: return ".ogg;.oga";
          case AUDIO_FORMAT_PAF_BE:    return ".paf";
          case AUDIO_FORMAT_PAF_LE:    return ".paf";
+         case AUDIO_FORMAT_WAV64:     return ".w64";
+         case AUDIO_FORMAT_CAF:       return ".caf";
+         case AUDIO_FORMAT_RF64:      return ".rf64";
+         case AUDIO_FORMAT_OGGOPUS:   return ".opus";
       }
       return NULL;
    }
@@ -903,7 +916,20 @@ void AudioMoveTreeWidget :: resizeEvent(QResizeEvent * e)
 
 #define DEFAULT_LCSDISK_NAME "wtrx-1-scsi-1.lcsDisk"
 
-AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, WindowFlags f) : QMainWindow(parent, f), _chooseDestDir(NULL), _addFiles(NULL), _addFolders(NULL), _quitOnIdle(false), _forceQuit(false), _numInitializing(0), _createLCSDisk(NULL), _lcsDiskFile(LocalToQ(DEFAULT_LCSDISK_NAME)), _tagCounter(0), _confirmationDialog(NULL), _audioSetupThread(NULL)
+AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, WindowFlags f) 
+   : QMainWindow(parent, f)
+   , _chooseDestDir(NULL)
+   , _addFiles(NULL)
+   , _addFolders(NULL)
+   , _quitOnIdle(false)
+   , _forceQuit(false)
+   , _numInitializing(0)
+   , _createLCSDisk(NULL)
+   , _lcsDiskFile(LocalToQ(DEFAULT_LCSDISK_NAME))
+   , _tagCounter(0)
+   , _confirmationDialog(NULL)
+   , _audioSetupThread(NULL)
+   , _updateComboBoxBackgroundsPending(false)
 {
    // Setup GUI
    QWidget * cw = new QWidget(this);
@@ -1213,12 +1239,95 @@ QComboBox * AudioMoveWindow :: CreateSettingsComboBox(const QString & label, QWi
       subLayout->addWidget(lab);
 
       ret = new QComboBox(subWidget);
+      connect(ret, SIGNAL(currentIndexChanged(int)), this, SLOT(ScheduleUpdateComboBoxBackgrounds()));
       lab->setBuddy(ret);
       subLayout->addWidget(ret);
       subLayout->addStretch(1);
    }
    layout->addWidget(subWidget); 
    return ret;
+}
+
+void AudioMoveWindow :: ScheduleUpdateComboBoxBackgrounds()
+{
+   if (_updateComboBoxBackgroundsPending == false)
+   {
+      _updateComboBoxBackgroundsPending = true;
+      QTimer::singleShot(0, this, SLOT(UpdateComboBoxBackgrounds()));
+   }
+}
+
+static QColor GetColorForErrorLevel(int sev)
+{
+   QColor c;
+   switch(sev)
+   {
+      case MUSCLE_LOG_NONE:           c = QColor(255,200,255); break;
+      case MUSCLE_LOG_CRITICALERROR:  c = QColor(255,100,100); break;
+      case MUSCLE_LOG_ERROR:          c = QColor(255,200,200); break;
+      case MUSCLE_LOG_WARNING:        c = QColor(255,255,0);   break;
+      case MUSCLE_LOG_DEBUG:          c = QColor(200,255,200); break;
+      case MUSCLE_LOG_TRACE:          c = QColor(220,255,255); break;
+      default:                        c = white;               break;
+   }
+   return c;
+}
+
+static void UpdateComboBoxBackground(QComboBox * b, int errorLevel)
+{
+   if (errorLevel != MUSCLE_LOG_INFO)
+   {
+      QPalette p = b->palette();
+      p.setColor(b->backgroundRole(), GetColorForErrorLevel(errorLevel));
+      b->setAutoFillBackground(true);
+      b->setPalette(p);   
+   }
+   else 
+   {
+      b->setPalette(QPalette());
+      b->setAutoFillBackground(false);
+   }
+}
+
+bool AudioMoveWindow :: IsTargetSampleRateSupported() const
+{
+   const uint32 sr = GetTargetSampleRate();
+   switch(GetTargetFormat())
+   {
+      case AUDIO_FORMAT_OGGOPUS:
+         switch(sr)
+         {
+            case AUDIO_RATE_8000:
+            case AUDIO_RATE_12000:
+            case AUDIO_RATE_16000:
+            case AUDIO_RATE_24000:
+            case AUDIO_RATE_48000:
+               return true;
+
+            default:
+               return false;
+         }
+      break;
+
+      default:
+         // empty
+      break;
+   }
+   return true;
+}
+
+bool AudioMoveWindow :: IsTargetSampleWidthSupported() const
+{
+//   const uint32 tf = GetTargetFormat();
+//   const uint32 sw = GetTargetSampleWidth();
+   return true;  // for now I'll assume they are all supported (if any are -- note that OGG doesn't bother with concepts like sample-width, so this doesn't apply to OGG)
+}
+
+void AudioMoveWindow :: UpdateComboBoxBackgrounds()
+{
+   _updateComboBoxBackgroundsPending = false;
+   UpdateComboBoxBackground(_targetSampleRate,  IsTargetSampleRateSupported()?MUSCLE_LOG_INFO:MUSCLE_LOG_CRITICALERROR);
+   UpdateComboBoxBackground(_targetSampleWidth, IsTargetSampleWidthSupported()?MUSCLE_LOG_INFO:MUSCLE_LOG_CRITICALERROR);
 }
 
 QAbstractButton * AudioMoveWindow :: AddButton(const QString & label, const char * slot, QWidget * parent, QBoxLayout * layout)
@@ -1317,6 +1426,10 @@ QString AudioMoveWindow :: GetFileFormatName(uint32 format) const
       case AUDIO_FORMAT_OGGVORBIS:  return ToQ(".OGG");
       case AUDIO_FORMAT_PAF_BE:     return ToQ(".PAF (B.E.)");
       case AUDIO_FORMAT_PAF_LE:     return ToQ(".PAF (L.E.)");
+      case AUDIO_FORMAT_WAV64:      return ToQ(".W64");
+      case AUDIO_FORMAT_CAF:        return ToQ(".CAF");
+      case AUDIO_FORMAT_RF64:       return ToQ(".RF64");
+      case AUDIO_FORMAT_OGGOPUS:    return ToQ(".OPUS");
       case AUDIO_FORMAT_NORMALIZED: return ToQ("");
       default:                      return tr("Unknown");
    }
@@ -1352,8 +1465,12 @@ QString AudioMoveWindow :: GetSampleRateName(uint32 rate, bool inTable) const
       case AUDIO_RATE_88200:  return tr("88.2kHz");
       case AUDIO_RATE_48000:  return tr("48kHz");
       case AUDIO_RATE_44100:  return tr("44.1kHz");
+      case AUDIO_RATE_24000:  return tr("24kHz");
       case AUDIO_RATE_22050:  return tr("22.05kHz");
+      case AUDIO_RATE_16000:  return tr("16kHz");
+      case AUDIO_RATE_12000:  return tr("12kHz");
       case AUDIO_RATE_11025:  return tr("11.025kHz");
+      case AUDIO_RATE_8000:   return tr("8kHz");
       default:                return tr("%1KHz").arg((uint32)(rate/1000), (int)0, (char)'g', (int)2, QLatin1Char(' '));
    }
 }
@@ -1725,7 +1842,7 @@ void AudioMoveWindow :: UpdateButtons()
                       else _quitOnIdle = false;
       }
    }
-   _targetSampleWidth->setEnabled(GetTargetFormat() != AUDIO_FORMAT_OGGVORBIS);  // Ogg doesn't care about sample widths?
+   _targetSampleWidth->setEnabled((GetTargetFormat() != AUDIO_FORMAT_OGGVORBIS)&&(GetTargetFormat() != AUDIO_FORMAT_OGGOPUS));  // Ogg doesn't care about sample widths?
 }
 
 void AudioMoveWindow :: UpdateDestinationPathStatus()
@@ -1950,8 +2067,12 @@ uint32 GetSampleRateValueFromCode(uint32 rateCode)
       case AUDIO_RATE_88200:  return 88200;
       case AUDIO_RATE_48000:  return 48000;
       case AUDIO_RATE_44100:  return 44100;
+      case AUDIO_RATE_24000:  return 24000;
       case AUDIO_RATE_22050:  return 22050;
+      case AUDIO_RATE_16000:  return 16000;
+      case AUDIO_RATE_12000:  return 12000;
       case AUDIO_RATE_11025:  return 11025;
+      case AUDIO_RATE_8000:   return 8000;
       default:                return rateCode;
    }
 }
@@ -1966,8 +2087,12 @@ uint32 GetSampleRateCodeFromValue(uint32 value)
       case 88200:  return AUDIO_RATE_88200;
       case 48000:  return AUDIO_RATE_48000;
       case 44100:  return AUDIO_RATE_44100;
+      case 24000:  return AUDIO_RATE_24000;
       case 22050:  return AUDIO_RATE_22050;
+      case 16000:  return AUDIO_RATE_16000;
+      case 12000:  return AUDIO_RATE_12000;
       case 11025:  return AUDIO_RATE_11025;
+      case 8000:   return AUDIO_RATE_8000;
       default:     return NUM_AUDIO_RATES;
    }
 }

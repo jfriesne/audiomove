@@ -30,23 +30,31 @@ enum {
    AUDIO_FORMAT_WAV,         // convert to WAV format
    AUDIO_FORMAT_AIFF,        // convert to AIFF format
    AUDIO_FORMAT_FLAC,        // convert to FLAC format
-   AUDIO_FORMAT_OGGVORBIS,   // convert to OGGVORBIS format
+   AUDIO_FORMAT_OGGVORBIS,   // convert to Ogg Vorbis format
    AUDIO_FORMAT_PAF_BE,      // convert to big-endian PAF format
    AUDIO_FORMAT_PAF_LE,      // convert to little-endian PAF format
+   AUDIO_FORMAT_WAV64,       // convert to WAV64 format
+   AUDIO_FORMAT_CAF,         // convert to CAF format
+   AUDIO_FORMAT_RF64,        // convert to RF64 format
+   AUDIO_FORMAT_OGGOPUS,     // convert to Ogg Opus format
    AUDIO_FORMAT_NORMALIZED,  // normalized big-endian floats
    NUM_AUDIO_FORMATS         // guard value
 };
 
 enum {
    AUDIO_RATE_SOURCE = 0,    // use same rate as source file
-   AUDIO_RATE_192000,        // 192kHz    -- super-high density rate
-   AUDIO_RATE_176400,        // 176.4kHz  -- quad-CD rate
-   AUDIO_RATE_96000,         // 96kHz     -- high density rate
-   AUDIO_RATE_88200,         // 88.2kHz   -- double-CD rate
-   AUDIO_RATE_48000,         // 48kHz     -- LCS's native rate
-   AUDIO_RATE_44100,         // 44.1kHz   -- CD native rate
-   AUDIO_RATE_22050,         // 22.05kHz  -- low density rate
-   AUDIO_RATE_11025,         // 11.025kHz -- voice-only rate
+   AUDIO_RATE_192000,        // 192kHz
+   AUDIO_RATE_176400,        // 176.4kHz
+   AUDIO_RATE_96000,         // 96kHz
+   AUDIO_RATE_88200,         // 88.2kHz
+   AUDIO_RATE_48000,         // 48kHz
+   AUDIO_RATE_44100,         // 44.1kHz
+   AUDIO_RATE_24000,         // 24kHz
+   AUDIO_RATE_22050,         // 22.05kHz
+   AUDIO_RATE_16000,         // 16kHz
+   AUDIO_RATE_12000,         // 12kHz
+   AUDIO_RATE_11025,         // 11.025kHz
+   AUDIO_RATE_8000,          // 8kHz
    NUM_AUDIO_RATES           // guard value
 };
 
@@ -70,7 +78,7 @@ enum {
    DEFAULT_AUDIO_CONVERSION_QUALITY = AUDIO_CONVERSION_QUALITY_GOOD  // SteveE says it's good enough and it's faster
 };
 
-/** Given an AUDIO_RATE_* code, returns the literal sample rate for that code (e.g. AUDIO_RATE_48000 -> 48000).  If (rateCode) is unknown, returns (rateCode) (since it may be a literal value in Hz). */
+/** Given an AUDIO_RATE_* code, returns the literal sample rate (in audioframes/second) for that code (e.g. AUDIO_RATE_48000 -> 48000).  If (rateCode) is unknown, returns (rateCode) (since it may be a literal value in Hz). */
 extern uint32 GetSampleRateValueFromCode(uint32 rateCode);
 
 /** Given a sample rate (e.g. 48000), returns the corresponding AUDIO_RATE_* code, or NUM_AUDIO_RATES if there is no corresponding code. */
