@@ -68,24 +68,7 @@ status_t LibSndFileIOThread :: OpenFile()
          // FogBugz #3579:  don't use big-endian for WAV: the rest of the world can't handle it yet!
          case AUDIO_FORMAT_WAV:  info.format = SF_FORMAT_WAV  | SF_ENDIAN_LITTLE; break;
          case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;    break;
-
-         case AUDIO_FORMAT_FLAC: 
-            info.format = SF_FORMAT_FLAC;
-
-            // If the user chose a sample width that FLAC can't support, switch to one it can
-            switch(_fileSampleWidth)
-            {
-               case AUDIO_WIDTH_INT24: 
-               case AUDIO_WIDTH_INT16:
-               case AUDIO_WIDTH_INT8: 
-                  // do nothing, FLAC supports these widths natively
-               break;
-
-               default:
-                  _fileSampleWidth = AUDIO_WIDTH_INT24; 
-               break;
-            }
-         break;
+         case AUDIO_FORMAT_FLAC: info.format = SF_FORMAT_FLAC;                    break;
 
          case AUDIO_FORMAT_OGGVORBIS: 
             info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
@@ -93,20 +76,6 @@ status_t LibSndFileIOThread :: OpenFile()
 
          case AUDIO_FORMAT_PAF_BE: case AUDIO_FORMAT_PAF_LE: 
             info.format = SF_FORMAT_PAF | ((_outputFileFormat == AUDIO_FORMAT_PAF_BE) ? SF_ENDIAN_BIG : SF_ENDIAN_LITTLE);
-
-            // If the user chose a sample width that PAF can't support, switch to one it can
-            switch(_fileSampleWidth)
-            {
-               case AUDIO_WIDTH_INT24: 
-               case AUDIO_WIDTH_INT16:
-               case AUDIO_WIDTH_INT8: 
-                  // do nothing, PAF supports these widths natively
-               break;
-
-               default:
-                  _fileSampleWidth = AUDIO_WIDTH_INT24; 
-               break;
-            }
          break;
 
          case AUDIO_FORMAT_WAV64:    info.format = SF_FORMAT_W64  | SF_ENDIAN_LITTLE; break;

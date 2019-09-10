@@ -1292,6 +1292,8 @@ static void UpdateComboBoxBackground(QComboBox * b, int errorLevel)
 bool AudioMoveWindow :: IsTargetSampleRateSupported() const
 {
    const uint32 sr = GetTargetSampleRate();
+   if (sr == AUDIO_RATE_SOURCE) return true;  // we don't know what it is, so we can't flag it
+
    switch(GetTargetFormat())
    {
       case AUDIO_FORMAT_OGGOPUS:
@@ -1318,9 +1320,41 @@ bool AudioMoveWindow :: IsTargetSampleRateSupported() const
 
 bool AudioMoveWindow :: IsTargetSampleWidthSupported() const
 {
-//   const uint32 tf = GetTargetFormat();
-//   const uint32 sw = GetTargetSampleWidth();
-   return true;  // for now I'll assume they are all supported (if any are -- note that OGG doesn't bother with concepts like sample-width, so this doesn't apply to OGG)
+   const uint32 sw = GetTargetSampleWidth();
+   if (sw == AUDIO_WIDTH_SOURCE) return true;  // we don't know what it is, so we can't flag it
+
+   switch(GetTargetFormat())
+   {
+      case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_WAV64: case AUDIO_FORMAT_RF64:
+         switch(sw)
+         {
+            case AUDIO_WIDTH_INT8:
+               return false;
+
+            default:
+               // empty
+            break;
+         }
+      break;
+            
+      case AUDIO_FORMAT_FLAC: case AUDIO_FORMAT_PAF_LE: case AUDIO_FORMAT_PAF_BE:
+         switch(sw)
+         {
+            case AUDIO_WIDTH_INT24:
+            case AUDIO_WIDTH_INT16:
+            case AUDIO_WIDTH_INT8:
+               return true;  // these are the ONLY sample-widths that FLAC and PAF support!
+
+            default:
+               return false;
+         }
+      break;
+
+      default:
+         // empty
+      break;
+   }
+   return true;
 }
 
 void AudioMoveWindow :: UpdateComboBoxBackgrounds()

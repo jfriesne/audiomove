@@ -150,8 +150,10 @@ v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne
                  - Updated the code to compile under either Qt 4.x or Qt 5.x.
                  - Added .W64, .CAF, .RF64, and .OPUS as output-format options
                  - Added 8kHz, 12kHz, 16kHz, and 24kHz as output-rate options
-                 - "Sample Rate" combo box now turns red if set to a known-not-to-work setting
+                 - "Rate" combo box now turns red if set to a known-not-to-work setting
                    for the current Output Format (e.g. 96kHz for Ogg/Opus)
+                 - "Width" combo box now turns red if set to a known-not-to-work setting
+                   for the current Output Format (e.g. 32-bit Fixed for FLAC)
 
 v1.21 5/19/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format
