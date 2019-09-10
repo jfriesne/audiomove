@@ -1,0 +1,18 @@
+[submodule "submodules/flac"]
+	path = submodules/flac
+	url = https://github.com/xiph/flac.git
+[submodule "submodules/ogg"]
+	path = submodules/ogg
+	url = https://github.com/xiph/ogg.git
+[submodule "submodules/libsamplerate"]
+	path = submodules/libsamplerate
+	url = https://github.com/erikd/libsamplerate.git
+[submodule "submodules/libsndfile"]
+	path = submodules/libsndfile
+	url = https://github.com/erikd/libsndfile.git
+[submodule "submodules/vorbis"]
+	path = submodules/vorbis
+	url = https://github.com/xiph/vorbis.git
+[submodule "submodules/muscle"]
+	path = submodules/muscle
+	url = https://github.com/jfriesne/muscle.git
