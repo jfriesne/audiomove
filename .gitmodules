@@ -16,3 +16,6 @@
 [submodule "submodules/muscle"]
 	path = submodules/muscle
 	url = https://github.com/jfriesne/muscle.git
+[submodule "submodules/opus"]
+	path = submodules/opus
+	url = https://github.com/xiph/opus.git

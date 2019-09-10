@@ -34,6 +34,16 @@ make install
 popd
 
 echo "************************************************************"
+echo "* Building opus..."
+echo "************************************************************"
+pushd opus
+./autogen.sh
+./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
+#touch_without_race_condition config* aclocal* Makefile*
+make install
+popd
+
+echo "************************************************************"
 echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
@@ -59,6 +69,10 @@ echo "************************************************************"
 pushd libsndfile
 export OGG_CFLAGS='-I'$(pwd)'/../ogg/temp_install/include'
 export OGG_LIBS='-L'$(pwd)'/../ogg/temp_install/lib -logg'
+export OPUS_CFLAGS='-I'$(pwd)'/../opus/temp_install/include'
+export OPUS_LIBS='-L'$(pwd)'/../opus/temp_install/lib -lopus'
+export OPUSENC_CFLAGS='-I'$(pwd)'/../opus/temp_install/include'
+export OPUSENC_LIBS='-L'$(pwd)'/../opus/temp_install/lib -lopusenc'
 export VORBIS_CFLAGS='-I'$(pwd)'/../vorbis/temp_install/include'
 export VORBIS_LIBS='-L'$(pwd)'/../vorbis/temp_install/lib -lvorbis'
 export VORBISENC_CFLAGS='-I'$(pwd)'/../vorbis/temp_install/include'
