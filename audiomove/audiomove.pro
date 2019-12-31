@@ -55,6 +55,7 @@ SOURCES    += audiomove.cpp           \
               AudioMoveMessageBox.cpp \
               AudioMovePopupMenu.cpp  \
               SampleRateThread.cpp    \
+              $$SUBMODULESDIR/muscle/dataio/FileDataIO.cpp            \
               $$SUBMODULESDIR/muscle/message/Message.cpp              \
               $$SUBMODULESDIR/muscle/regex/StringMatcher.cpp          \
               $$SUBMODULESDIR/muscle/syslog/SysLog.cpp                \

@@ -147,6 +147,7 @@ History
 
 v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
                    for easier development.
+                 - Updated the muscle submodule to the latest.
                  - Updated the code to compile under either Qt 4.x or Qt 5.x.
                  - Added .W64, .CAF, .RF64, and .OPUS as output-format options
                  - Added 8kHz, 12kHz, 16kHz, and 24kHz as output-rate options
