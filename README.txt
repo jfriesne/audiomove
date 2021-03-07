@@ -147,6 +147,7 @@ History
 
 v???? 2/7/2021 - Updated muscle submodule to the latest
                - Updated error-handling the modern-muscle style
+               - Updated audio-handling submodules to the latest
 
 v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
                    for easier development.
