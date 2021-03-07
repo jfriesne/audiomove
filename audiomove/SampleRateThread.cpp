@@ -46,7 +46,7 @@ status_t SampleRateThread :: OpenFile()
 {
    if (_inputRate != _outputRate)
    {
-      if ((_numStreams == 0)||(_outputRate == 0)) return B_ERROR;  // paranoia:  avoid divide-by-zero
+      if ((_numStreams == 0)||(_outputRate == 0)) return B_BAD_OBJECT;  // paranoia:  avoid divide-by-zero
 
       CloseFileAux();  // paranoia
       _inputFrame = _availFrames = 0;
@@ -62,7 +62,7 @@ status_t SampleRateThread :: OpenFile()
 
       int err;
       _codec = src_new(q, _numStreams, &err);
-      if (_codec == NULL) return B_ERROR;
+      if (_codec == NULL) return B_LOGIC_ERROR;
 
       // Set this field here -- all the other fields will be set inside GenerateBlock().
       _data.src_ratio = ((double)_outputRate) / ((double)_inputRate);
@@ -88,7 +88,7 @@ ByteBufferRef SampleRateThread :: ProcessBuffer(const ByteBufferRef & buf, QStri
 
    // First, queue up the new input buffer
    {
-      if ((buf() == NULL)||(_inputBuffers.AddTail(buf) != B_NO_ERROR)) return OutOfMemory(retErrStr);
+      if ((buf() == NULL)||(_inputBuffers.AddTail(buf).IsError())) return OutOfMemory(retErrStr);
       _availFrames += buf()->GetNumBytes()/(sizeof(float)*_numStreams);
    }
 

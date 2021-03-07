@@ -34,7 +34,7 @@ public:
    /** Destructor. */
    virtual ~ErrorIOThread() {/* empty */}
 
-   virtual status_t OpenFile() {return B_ERROR;}
+   virtual status_t OpenFile() {return B_UNIMPLEMENTED;}
    virtual void CloseFile(uint32 /*closeFlags*/) {/* empty */}
    virtual status_t GetFilesThatWillBeOverwritten(Message & /*msg*/, const String & /*fn*/) {return B_NO_ERROR;}
    

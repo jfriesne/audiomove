@@ -237,7 +237,7 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
    AddBottomWidget(_extras);
 
    Message tempMsg;
-   if (LoadMessageFromRegistry(_fileCategory(), tempMsg) == B_NO_ERROR) (void) RestoreWindowPositionFromArchive(this, tempMsg, false);
+   if (LoadMessageFromRegistry(_fileCategory(), tempMsg).IsOK()) (void) RestoreWindowPositionFromArchive(this, tempMsg, false);
 
    resize(sizeHint());
    RereadDir();
@@ -291,12 +291,12 @@ void AudioMoveFileDialog::RereadDir()
 
    QString allPaths;
    Message temp;
-   if (LoadMessageFromRegistry(_fileCategory(), temp) == B_NO_ERROR)
+   if (LoadMessageFromRegistry(_fileCategory(), temp).IsOK())
    {
       bool setDir = false;
 
       String nextPath;
-      for (int32 i=0; temp.FindString("path", i, nextPath) == B_NO_ERROR; i++)
+      for (int32 i=0; temp.FindString("path", i, nextPath).IsOK(); i++)
       {
          if (setDir == false)
          { 
@@ -347,17 +347,17 @@ void AudioMoveFileDialog :: LoadRecentListFromRegistry()
 {
    _recentFilesList.Clear();
    Message temp;
-   if (LoadMessageFromRegistry((_fileCategory+"_recent")(), temp) == B_NO_ERROR)
+   if (LoadMessageFromRegistry((_fileCategory+"_recent")(), temp).IsOK())
    {
       // In the current format, each entry has its own sub-Message
       MessageRef subMsg;
-      for (int32 i=0; ((_recentFilesList.GetNumItems() < MAX_RECENT_FILES)&&(temp.FindMessage("recent", i, subMsg) == B_NO_ERROR)); i++)
+      for (int32 i=0; ((_recentFilesList.GetNumItems() < MAX_RECENT_FILES)&&(temp.FindMessage("recent", i, subMsg).IsOK())); i++)
       {
-         if (_recentFilesList.AddTail() == B_NO_ERROR)
+         if (_recentFilesList.AddTail().IsOK())
          {
             Queue<String> & q = _recentFilesList.Tail();
             String s;
-            for (int32 j=0; subMsg()->FindString("recent", j, s) == B_NO_ERROR; j++) (void) q.AddTail(s);
+            for (int32 j=0; subMsg()->FindString("recent", j, s).IsOK(); j++) (void) q.AddTail(s);
          }
       }
    }
@@ -400,15 +400,13 @@ status_t AudioMoveFileDialog :: GetHotButtonDefaults(QString & retLab, String & 
       case 4:  
       {
          retLab = GetExecutableName();
-         if (GetSystemPath(SYSTEM_PATH_EXECUTABLE, retLoc) == B_NO_ERROR)
-         {
-            // Get rid of the "AudioMove.app" silliness
-            int32 appIdx = retLoc.LastIndexOf(".app");
-            while((appIdx >= 0)&&(retLoc[appIdx] != '/')) appIdx--; 
-            retLoc = retLoc.Substring(0, appIdx);
-            return B_NO_ERROR; 
-         }
-         return B_ERROR;
+         MRETURN_ON_ERROR(GetSystemPath(SYSTEM_PATH_EXECUTABLE, retLoc));
+
+         // Get rid of the "AudioMove.app" silliness
+         int32 appIdx = retLoc.LastIndexOf(".app");
+         while((appIdx >= 0)&&(retLoc[appIdx] != '/')) appIdx--; 
+         retLoc = retLoc.Substring(0, appIdx);
+         return B_NO_ERROR; 
       }
       case 5:  retLab = tr("Root");       return GetSystemPath(SYSTEM_PATH_ROOT,       retLoc);
 #else
@@ -422,7 +420,7 @@ status_t AudioMoveFileDialog :: GetHotButtonDefaults(QString & retLab, String & 
 # endif
 #endif
 
-      default: return B_ERROR;
+      default: return B_BAD_ARGUMENT;
    }
 }
 
@@ -444,8 +442,8 @@ void AudioMoveFileDialog :: LoadHotButtonsFromRegistry()
    for (uint32 i=0; i<NUM_HOT_BUTTONS; i++)
    {
       String lab, loc;
-      if ((temp.FindString("hotlab", i, lab) == B_NO_ERROR)&&(temp.FindString("hotloc", i, loc) == B_NO_ERROR)) UpdateHotButton(i, ToQ(lab()), loc);
-                                                                                                           else ResetHotButton(i);
+      if ((temp.FindString("hotlab", i, lab).IsOK())&&(temp.FindString("hotloc", i, loc).IsOK())) UpdateHotButton(i, ToQ(lab()), loc);
+                                                                                             else ResetHotButton(i);
    }
    UpdateHotButtons();
 }
@@ -454,7 +452,7 @@ void AudioMoveFileDialog :: ResetHotButton(uint32 which)
 {
    QString qLab;
    String loc;
-   if (GetHotButtonDefaults(qLab, loc, which) != B_NO_ERROR)
+   if (GetHotButtonDefaults(qLab, loc, which).IsError())
    {
       qLab = tr("Unassigned");
       loc  = "";
@@ -733,7 +731,7 @@ void AudioMoveFileDialog :: OverwriteCheckResults(int button, const MessageRef &
    {
       QStringList sl;
       const char * next;
-      for (int32 i=0; files()->FindString("files", i, &next) == B_NO_ERROR; i++) sl.push_back(LocalToQ(next));
+      for (int32 i=0; files()->FindString("files", i, &next).IsOK(); i++) sl.push_back(LocalToQ(next));
       ReturnFileResults(sl);
    }
 }
@@ -795,7 +793,7 @@ void AudioMoveFileDialog :: UpdateRecentFilesTreeWidget()
 
 void AudioMoveFileDialog :: DeleteItem(int32 idx)
 {
-   if (_recentFilesList.RemoveItemAt(idx) == B_NO_ERROR)
+   if (_recentFilesList.RemoveItemAt(idx).IsOK())
    delete _recentFilesTreeWidget->topLevelItem(idx);
    SaveRecentListToRegistry();
 
@@ -874,7 +872,7 @@ void AudioMoveFileDialog :: HotButtonRightClicked()
       {
          QString defaultLab;
          String defaultLoc;
-         if (GetHotButtonDefaults(defaultLab, defaultLoc, i) != B_NO_ERROR) defaultLab = tr("Unassigned");
+         if (GetHotButtonDefaults(defaultLab, defaultLoc, i).IsError()) defaultLab = tr("Unassigned");
 
          AudioMovePopupMenu * pop = new AudioMovePopupMenu(true, this, SLOT(PopupMenuResult(int, int, int)), btn);
          pop->InsertCommandItem((_hotButtonDirs[i].HasChars()?tr("Reassign Button to "):tr("Assign Button to "))+GetDirName(_lastDirectory, tr("(Unknown Folder)")), HOTBUTTON_POPUP_ASSIGN, ((_lastDirectory.exists()))&&(_lastDirectory.isRelative() == false));

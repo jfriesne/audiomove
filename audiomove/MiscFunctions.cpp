@@ -74,7 +74,7 @@ status_t ReadSettingsFile(const char * prefsPath, Message & settings)
          return ret;
       }
    }
-   return B_ERROR;
+   return B_IO_ERROR;
 }
 
 status_t WriteSettingsFile(const char * prefsPath, const Message & settings, int compressionLevel)
@@ -97,7 +97,7 @@ status_t WriteSettingsFile(const char * prefsPath, const Message & settings, int
          if ((file.open(QIODevice::WriteOnly))&&(file.write((const char *)bufRef()->GetBuffer(), bufRef()->GetNumBytes()) == (int32)bufRef()->GetNumBytes())) return B_NO_ERROR;
       }
    }
-   return B_ERROR;
+   return B_IO_ERROR;
 }
 
 QDir GetSettingsFolder(const QString & subFolderName, bool createIfNecessary)
@@ -126,7 +126,7 @@ status_t SaveMessageToRegistry(const char * subkey, const Message & msg)
 {
    SharedMemory memLock;  // used as a read/write lock to ensure the file isn't corrupted
    String temp(REGISTRY_FILE_PREFIX); temp += subkey;
-   if ((memLock.SetArea(REGISTRY_DIR_NAME, 1) == B_NO_ERROR)&&(memLock.LockAreaReadWrite() == B_NO_ERROR))
+   if ((memLock.SetArea(REGISTRY_DIR_NAME, 1).IsOK())&&(memLock.LockAreaReadWrite().IsOK()))
    {
       QDir dir = GetSettingsFolder(LocalToQ(REGISTRY_DIR_NAME), true);
       if (dir.exists())
@@ -135,14 +135,14 @@ status_t SaveMessageToRegistry(const char * subkey, const Message & msg)
          return WriteSettingsFile(path(), msg, 0);  // don't worry, SharedMemory dtor unlocks the area for us
       }
    }
-   return B_ERROR;
+   return B_IO_ERROR;
 }
 
 status_t LoadMessageFromRegistry(const char * subkey, Message & msg)
 {
    SharedMemory memLock;  // used as a read/write lock to ensure the file isn't corrupted
    String temp(REGISTRY_FILE_PREFIX); temp += subkey;
-   if ((memLock.SetArea(REGISTRY_DIR_NAME, 1) == B_NO_ERROR)&&(memLock.LockAreaReadOnly() == B_NO_ERROR))
+   if ((memLock.SetArea(REGISTRY_DIR_NAME, 1).IsOK())&&(memLock.LockAreaReadOnly().IsOK()))
    {
       QDir dir = GetSettingsFolder(LocalToQ(REGISTRY_DIR_NAME), false);
       if (dir.exists())
@@ -151,7 +151,7 @@ status_t LoadMessageFromRegistry(const char * subkey, Message & msg)
          return ReadSettingsFile(path(), msg);  // don't worry, SharedMemory dtor unlocks the area for us
       }
    }
-   return B_ERROR;
+   return B_IO_ERROR;
 }
 
 void ShowDialog(QWidget * w)
@@ -169,7 +169,7 @@ void ShowDialog(QWidget * w)
 status_t SaveWindowPositionToArchive(const QWidget * window, Message & archive)
 {
    QDesktopWidget * desktop = QApplication::desktop();
-   if ((desktop)&&(desktop->isVirtualDesktop() == false)&&(archive.AddInt32("screen", desktop->screenNumber((QWidget *)window)) != B_NO_ERROR)) return B_ERROR;
+   if ((desktop)&&(desktop->isVirtualDesktop() == false)) MRETURN_ON_ERROR(archive.AddInt32("screen", desktop->screenNumber((QWidget *)window)));
 
    // see file:/usr/local/qt/doc/html/geometry.html (at the bottom)
    QPoint p = window->pos();
@@ -182,35 +182,33 @@ status_t RestoreWindowPositionFromArchive(QWidget * window, const Message & arch
    QDesktopWidget * desktop = QApplication::desktop();
 
    Rect r;
-   if (archive.FindRect("geometry", r) == B_NO_ERROR) 
-   {
-      QRect qr(muscleRintf(r.left()), muscleRintf(r.top()), muscleRintf(r.Width()), muscleRintf(r.Height()));
-      qr.setWidth( muscleClamp(qr.width(),  window->minimumWidth(),  window->maximumWidth()));
-      qr.setHeight(muscleClamp(qr.height(), window->minimumHeight(), window->maximumHeight()));
+   MRETURN_ON_ERROR(archive.FindRect("geometry", r));
 
-      bool onScreen = false;
+   QRect qr(muscleRintf(r.left()), muscleRintf(r.top()), muscleRintf(r.Width()), muscleRintf(r.Height()));
+   qr.setWidth( muscleClamp(qr.width(),  window->minimumWidth(),  window->maximumWidth()));
+   qr.setHeight(muscleClamp(qr.height(), window->minimumHeight(), window->maximumHeight()));
+
+   bool onScreen = false;
+   {
+      int numScreens = desktop->numScreens();
+      for (int i=0; i<numScreens; i++)
       {
-         int numScreens = desktop->numScreens();
-         for (int i=0; i<numScreens; i++)
+         // Make sure we are at least partially visible on the screen!
+         QRect screenRect = desktop->availableGeometry(i);
+         if (qr.intersects(screenRect))
          {
-            // Make sure we are at least partially visible on the screen!
-            QRect screenRect = desktop->availableGeometry(i);
-            if (qr.intersects(screenRect))
-            {
-               onScreen = true;
-               break;
-            }
+            onScreen = true;
+            break;
          }
       }
-
-      // If it's not visible anywhere, move it to the center of the primary screen.
-      // and the user can decide where to put it.
-      if (onScreen == false) qr.moveCenter(desktop->availableGeometry().center());
-      if (allowResize) window->resize(QSize(qr.width(), qr.height()));
-      window->move(qr.left(), qr.top());
-      return B_NO_ERROR;
    }
-   return B_ERROR;
+
+   // If it's not visible anywhere, move it to the center of the primary screen.
+   // and the user can decide where to put it.
+   if (onScreen == false) qr.moveCenter(desktop->availableGeometry().center());
+   if (allowResize) window->resize(QSize(qr.width(), qr.height()));
+   window->move(qr.left(), qr.top());
+   return B_NO_ERROR;
 }
 
 status_t EnsureFileFolderExists(const String & fileName, bool createIfNecessary)
@@ -229,13 +227,13 @@ status_t EnsureFileFolderExists(const String & fileName, bool createIfNecessary)
       {
          path += next;
 #if defined(WIN32)
-         if ((GetFileAttributesA(path()) == INVALID_FILE_ATTRIBUTES)&&((createIfNecessary == false)||(CreateDirectoryA(path(), 0) == FALSE))) return B_ERROR;
+         if ((GetFileAttributesA(path()) == INVALID_FILE_ATTRIBUTES)&&((createIfNecessary == false)||(CreateDirectoryA(path(), 0) == FALSE))) return B_IO_ERROR;
 #else
          DIR * dir = opendir(path());
          if (dir) closedir(dir);
          else 
          {
-            if (createIfNecessary == false) return B_ERROR;
+            if (createIfNecessary == false) return B_ACCESS_DENIED;
             (void) mkdir(path(), S_IRWXU|S_IRWXG|S_IRWXO);
          }
 #endif

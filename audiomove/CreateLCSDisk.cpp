@@ -39,7 +39,7 @@ enum {CUEMIXER_REPLY_VIRTUALDRIVEFILE = 1903063607};  // stolen from qtnet/proto
 
 static status_t CreateVDiskFileAux(const String & node, Message & msg, CreateVDiskDialog * dlg)
 {
-   if (dlg->IsCancelled()) return B_ERROR;
+   if (dlg->IsCancelled()) return B_ERROR("User cancelled dialog");
    qApp->processEvents();
 
    DIR * dir = opendir(node());
@@ -56,7 +56,9 @@ static status_t CreateVDiskFileAux(const String & node, Message & msg, CreateVDi
          {
             dlg->SetCurrentFileName(ToQ(node.Substring("/")()));
             MessageRef subMsg = GetMessageFromPool(CUEMIXER_REPLY_VIRTUALDRIVEFILE);
-            if ((subMsg() == NULL)||(CreateVDiskFileAux(node+n.Prepend("/"), *subMsg(), dlg) != B_NO_ERROR)||((subMsg()->GetNumNames() > 0)&&(msg.AddMessage(n, subMsg) != B_NO_ERROR))) return B_ERROR; 
+            MRETURN_ON_NULL(subMsg());
+            MRETURN_ON_ERROR(CreateVDiskFileAux(node+n.Prepend("/"), *subMsg(), dlg));
+            if (subMsg()->GetNumNames() > 0) MRETURN_ON_ERROR(msg.AddMessage(n, subMsg));
          }
       }
       closedir(dir);
@@ -65,13 +67,14 @@ static status_t CreateVDiskFileAux(const String & node, Message & msg, CreateVDi
    {
       // If (node) is a file, then just add the file's attributes to (msg).
       LibSndFileIOThread t(node);
-      if (t.OpenFile() == B_NO_ERROR)
+      if (t.OpenFile().IsOK())
       {
-         uint8 numStreams = t.GetFileStreams();
-         int64 numSamples = t.GetFileFrames();
+         const uint8 numStreams = t.GetFileStreams();
+         const int64 numSamples = t.GetFileFrames();
          t.CloseFile(CLOSE_FLAG_FINAL);
 
-         if (((numStreams != 1)&&(msg.AddInt8(".c", numStreams) != B_NO_ERROR))||(msg.AddInt64(".s", numSamples) != B_NO_ERROR)) return B_ERROR;
+         status_t ret;
+         if ((msg.CAddInt8(".c", numStreams, 1).IsError(ret))||(msg.AddInt64(".s", numSamples).IsError(ret))) return ret;
       }
    }
    return B_NO_ERROR;
@@ -109,11 +112,13 @@ void CreateVDiskDialog :: SetCurrentFileName(const QString & s)
 status_t CreateVDiskFile(const char * targetDisk, const char * targetFile, QWidget * parent)
 {
    MessageRef msg = GetMessageFromPool(CUEMIXER_REPLY_VIRTUALDRIVEFILE);
-   if (msg() == NULL) return B_ERROR;
+   MRETURN_ON_NULL(msg());
 
    CreateVDiskDialog * dlg = new CreateVDiskDialog(parent);
    dlg->show();
-   if (CreateVDiskFileAux(targetDisk, *msg(), dlg) != B_NO_ERROR) 
+
+   status_t ret;
+   if (CreateVDiskFileAux(targetDisk, *msg(), dlg).IsError(ret)) 
    {
       bool wasCancelled = dlg->IsCancelled();
       delete dlg;
@@ -121,31 +126,32 @@ status_t CreateVDiskFile(const char * targetDisk, const char * targetFile, QWidg
       if (wasCancelled) return B_NO_ERROR;  // avoid error dialog in this case
       else
       {
-         printf("Error creating .lcsDisk Message!\n");
-         return B_ERROR;
+         printf("Error creating .lcsDisk Message! [%s]\n", ret());
+         return ret;
       }
    }
+
    delete dlg;
   
    MessageRef compressedMsg = DeflateMessage(msg, 9);
-   if (compressedMsg() == NULL) 
+   if (compressedMsg()) 
    {
       printf("Error compressing .lcsDisk Message!\n");
-      return B_ERROR;
+      return B_ZLIB_ERROR;
    }
 
    FILE * fpOut = fopen(targetFile, "w");
    if (fpOut == NULL)
    {
       printf("Error, couldn't open output file [%s]\n", targetFile);
-      return B_ERROR;
+      return B_IO_ERROR;
    }
 
    FileDataIO dio(fpOut);
-   if (compressedMsg()->FlattenToDataIO(dio, false) != B_NO_ERROR)
+   if (compressedMsg()->FlattenToDataIO(dio, false).IsError(ret))
    {
-      printf("Error writing .lcsDisk data to output file [%s]\n", targetFile);
-      return B_ERROR;
+      printf("Error writing .lcsDisk data to output file [%s] [%s]\n", targetFile, ret());
+      return ret;
    }
  
    return B_NO_ERROR;

@@ -70,6 +70,7 @@ SOURCES    += audiomove.cpp           \
               $$SUBMODULESDIR/muscle/util/Directory.cpp               \
               $$SUBMODULESDIR/muscle/util/NetworkUtilityFunctions.cpp \
               $$SUBMODULESDIR/muscle/util/String.cpp                  \
+              $$SUBMODULESDIR/muscle/util/StringTokenizer.cpp         \
               $$SUBMODULESDIR/muscle/zlib/ZLibCodec.cpp               \
               $$SUBMODULESDIR/muscle/zlib/ZLibUtilityFunctions.cpp
 

@@ -145,6 +145,9 @@ NOTE:  To make use of the .lcsDisk file, you will need to have software that kno
 History
 -------
 
+v???? 2/7/2021 - Updated muscle submodule to the latest
+               - Updated error-handling the modern-muscle style
+
 v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
                    for easier development.
                  - Updated the muscle submodule to the latest.

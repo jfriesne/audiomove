@@ -158,12 +158,12 @@ protected:
 
          uint32 targetFormat, targetRate, targetWidth, quality;
          bool splitFiles;
-         if ((msg->FindString(SETUP_NAME_SOURCEFILE, sourceFile)              == B_NO_ERROR)&&
-             (msg->FindInt32(SETUP_NAME_TARGETFORMAT, (int32*) &targetFormat) == B_NO_ERROR)&&
-             (msg->FindInt32(SETUP_NAME_TARGETRATE,   (int32*) &targetRate)   == B_NO_ERROR)&&
-             (msg->FindInt32(SETUP_NAME_TARGETWIDTH,  (int32*) &targetWidth)  == B_NO_ERROR)&&
-             (msg->FindInt32(SETUP_NAME_QUALITY,      (int32*) &quality)      == B_NO_ERROR)&&
-             (msg->FindBool(SETUP_NAME_SPLITFILES,   &splitFiles)             == B_NO_ERROR)) DoSetup(destDir, sourceFile, destDir, targetFormat, targetRate, targetWidth, quality, splitFiles);
+         if ((msg->FindString(SETUP_NAME_SOURCEFILE, sourceFile)             .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETFORMAT, (int32*) &targetFormat).IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETRATE,   (int32*) &targetRate)  .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETWIDTH,  (int32*) &targetWidth) .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_QUALITY,      (int32*) &quality)     .IsOK())&&
+             (msg->FindBool(SETUP_NAME_SPLITFILES,   &splitFiles)            .IsOK())) DoSetup(destDir, sourceFile, destDir, targetFormat, targetRate, targetWidth, quality, splitFiles);
          return B_NO_ERROR;
       }
       else return Thread::MessageReceivedFromOwner(msgRef, numLeft);
@@ -219,9 +219,9 @@ protected:
             
             SF_BROADCAST_INFO bi; memset(&bi, 0, sizeof(bi));
             bool biValid = false;
-            if (inputThreadRef()->OpenFile() == B_NO_ERROR)
+            if (inputThreadRef()->OpenFile().IsOK())
             {
-               if ((inputThread)&&(_isReadBroadcastInfoEnabled)) biValid = (inputThread->GetBroadcastInfo(bi) == B_NO_ERROR);
+               if ((inputThread)&&(_isReadBroadcastInfoEnabled)) biValid = inputThread->GetBroadcastInfo(bi).IsOK();
             }
             else
             {
@@ -317,10 +317,10 @@ protected:
                }
             }
 
-            if ((subMsg()->AddInt32(SETUP_NAME_QUALITY,    quality)                             == B_NO_ERROR)&&
-                (subMsg()->AddTag(SETUP_NAME_INPUTTHREAD,  inputThreadRef.GetRefCountableRef()) == B_NO_ERROR)&&
-                (subMsg()->AddTag(SETUP_NAME_OUTPUTTHREAD, outputThread.GetRefCountableRef())   == B_NO_ERROR)&&
-                ((errorString.length() == 0)||(subMsg()->AddString(SETUP_NAME_ERROR, FromQ(errorString)) == B_NO_ERROR))) (void) addMsgTo.AddMessage(SETUP_NAME_SETUPRESULT, subMsg);
+            if ((subMsg()->AddInt32(SETUP_NAME_QUALITY,    quality)                            .IsOK())&&
+                (subMsg()->AddTag(SETUP_NAME_INPUTTHREAD,  inputThreadRef.GetRefCountableRef()).IsOK())&&
+                (subMsg()->AddTag(SETUP_NAME_OUTPUTTHREAD, outputThread.GetRefCountableRef())  .IsOK())&&
+                (subMsg()->CAddString(SETUP_NAME_ERROR,    FromQ(errorString))                 .IsOK())) (void) addMsgTo.AddMessage(SETUP_NAME_SETUPRESULT, subMsg);
          }
       }
    }
@@ -350,7 +350,7 @@ protected:
 
 #ifdef WIN32
       // A special case for Windows CD files
-      if (ReplaceExtensionAux(s, ".cda", useUpperCase) != B_NO_ERROR)
+      if (ReplaceExtensionAux(s, ".cda", useUpperCase).IsError())
 #endif
       {
          // First, remove any existing extension...
@@ -363,7 +363,7 @@ protected:
                const char * nextExt;
                while((nextExt = tok()) != NULL)
                {
-                  if (ReplaceExtensionAux(s, nextExt, useUpperCase) == B_NO_ERROR) break;
+                  if (ReplaceExtensionAux(s, nextExt, useUpperCase).IsOK()) break;
                }
             }
          }
@@ -375,7 +375,7 @@ protected:
  
    status_t ReplaceExtensionAux(String & s, const String & es, bool & useUpperCase) const
    {
-      if (s.EndsWithIgnoreCase(es) == false) return B_ERROR;
+      if (s.EndsWithIgnoreCase(es) == false) return B_DATA_NOT_FOUND;
 
       uint32 extStart = s.Length()-es.Length();
       useUpperCase = muscleInRange(s[extStart+1], 'A', 'Z');
@@ -437,23 +437,26 @@ status_t AudioMoveItem :: StartInternalThreads()
    if (_internalThreadsStarted == false)
    {
       MessageRef startup = GetMessageFromPool(_tag);
-      if ((startup())&&(startup()->AddBool(AUDIOMOVE_NAME_OPENFILE, true) == B_NO_ERROR)&&(_threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(startup) == B_NO_ERROR))
+      MRETURN_ON_NULL(startup());
+
+      status_t ret;
+      if ((startup()->AddBool(AUDIOMOVE_NAME_OPENFILE, true).IsOK(ret))&&(_threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(startup).IsOK(ret)))
       {
          _numActiveBuffers++;  // the OPENFILE command counts as a buffer!
          for (uint32 i=0; i<ARRAYITEMS(_threads); i++) 
          {
-            if (_threads[i]()->StartInternalThread() != B_NO_ERROR) 
+            if (_threads[i]()->StartInternalThread().IsError(ret))
             {
                SetStatus(MOVE_STATUS_ERROR);
                ShutdownInternalThreads();
                SetStatusString(qApp->translate("AudioMoveItem", "Couldn't spawn worker thread!"));
                Update(true);
-               return B_ERROR;
+               return ret;
             }
          }
          _internalThreadsStarted = true;
       }
-      else return B_ERROR;
+      else return ret;
    }
    return B_NO_ERROR;
 }
@@ -566,7 +569,7 @@ status_t AudioMoveItem :: SendBuffers(bool allowChangeStatus)
          {
             // Special case for 0-sample files:  send a Message just to flush everyone's temp-files out
             MessageRef msg = GetMessageFromPool(_tag);
-            if ((msg())&&(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true) == B_NO_ERROR)) (void) _threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(msg);
+            if ((msg())&&(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true).IsOK())) (void) _threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(msg);
          }
          SetStatus(MOVE_STATUS_COMPLETE);  // nothing more to do!
          ShutdownInternalThreads();
@@ -587,11 +590,11 @@ status_t AudioMoveItem :: SendBuffers(bool allowChangeStatus)
                MessageRef msg = GetMessageFromPool(_tag);
                uint32 bufSamples = (((uint32) muscleMin((uint64)MAX_BUFFER_SIZE_SAMPLES, _samplesLeft))/frameSizeSamples)*frameSizeSamples;  // FogBugz #4511, FogBugz #4530
                ByteBufferRef buf = GetByteBufferFromPool(bufSamples * sizeof(float));
-               if ((msg())&&(buf())&&(bufSamples>0)                                                             &&
-                   ((bufSamples < _samplesLeft)||(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true) == B_NO_ERROR))   &&
-                   (msg()->AddInt32(AUDIOMOVE_NAME_ORIGSIZE, bufSamples) == B_NO_ERROR)                         &&
-                   (msg()->AddFlat(AUDIOMOVE_NAME_BUF, FlatCountableRef(buf.GetRefCountableRef(), true)) == B_NO_ERROR) &&
-                   (input->MessageReceivedFromUpstream(msg) == B_NO_ERROR)) 
+               if ((msg())&&(buf())&&(bufSamples>0)                                                               &&
+                   ((bufSamples < _samplesLeft)||(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true)           .IsOK())) &&
+                   (msg()->AddInt32(AUDIOMOVE_NAME_ORIGSIZE, bufSamples)                                .IsOK())  &&
+                   (msg()->AddFlat(AUDIOMOVE_NAME_BUF, FlatCountableRef(buf.GetRefCountableRef(), true)).IsOK())  &&
+                   (input->MessageReceivedFromUpstream(msg)                                             .IsOK())) 
                {
                   _samplesLeft -= bufSamples;
                   _numActiveBuffers++;
@@ -620,7 +623,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
       else
       {
          int32 osize;
-         if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, &osize) == B_NO_ERROR)) _samplesComplete += osize;
+         if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, &osize).IsOK())) _samplesComplete += osize;
          else 
          {
             if (_totalSamples > 0) SetStatus((_totalSamples>0)?MOVE_STATUS_ERROR:MOVE_STATUS_COMPLETE);
@@ -629,7 +632,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
       }
 
       const char * s;
-      if (msg()->FindString(AUDIOMOVE_NAME_STATUS, &s) == B_NO_ERROR) SetStatusString(ToQ(s));
+      if (msg()->FindString(AUDIOMOVE_NAME_STATUS, &s).IsOK()) SetStatusString(ToQ(s));
    }
 
    _numActiveBuffers--;
@@ -1064,7 +1067,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
       bool confirm = true;
 
       Message settingsMsg;
-      if (LoadMessageFromRegistry("audiomove", settingsMsg) == B_NO_ERROR)
+      if (LoadMessageFromRegistry("audiomove", settingsMsg).IsOK())
       {
          (void) settingsMsg.FindString("amw_dest",    dest);
          (void) settingsMsg.FindInt32("amw_tformat", &format);
@@ -1075,8 +1078,8 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          (void) settingsMsg.FindBool("amw_split",    &split);
          (void) settingsMsg.FindBool("amw_ipc",      &ipc);
          (void) settingsMsg.FindBool("amw_cow",      &confirm);
-         if (settingsMsg.FindString("amw_afd", addFilesDir) == B_NO_ERROR) _addFilesDir = LocalToQ(addFilesDir());
-         if (settingsMsg.FindString("amw_lcf", lcsDiskFile) == B_NO_ERROR) _lcsDiskFile = LocalToQ(lcsDiskFile());
+         if (settingsMsg.FindString("amw_afd", addFilesDir).IsOK()) _addFilesDir = LocalToQ(addFilesDir());
+         if (settingsMsg.FindString("amw_lcf", lcsDiskFile).IsOK()) _lcsDiskFile = LocalToQ(lcsDiskFile());
          (void) RestoreWindowPositionFromArchive(this, settingsMsg);
       }
 
@@ -1085,17 +1088,17 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          QHeaderView * h = _processList->header();
 
          int32 cw;
-         for (int32 i=0; settingsMsg.FindInt32("amw_colw", i, &cw) == B_NO_ERROR; i++) if (cw > 0) h->resizeSection(i, cw);
+         for (int32 i=0; settingsMsg.FindInt32("amw_colw", i, &cw).IsOK(); i++) if (cw > 0) h->resizeSection(i, cw);
 
          Hashtable<int32, int32> desiredOrder;
          int32 ci;
-         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, &ci) == B_NO_ERROR; i++) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
+         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, &ci).IsOK(); i++) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
          desiredOrder.SortByValue();
 
          for (HashtableIterator<int32,int32> iter(desiredOrder, HTIT_FLAG_BACKWARDS); iter.HasData(); iter++) h->moveSection(h->visualIndex(iter.GetKey()), 0);
 
          bool hidden;
-         for (int32 i=0; settingsMsg.FindBool("amw_colh", i, &hidden) == B_NO_ERROR; i++) _processList->SetSectionHidden(i, hidden);
+         for (int32 i=0; settingsMsg.FindBool("amw_colh", i, &hidden).IsOK(); i++) _processList->SetSectionHidden(i, hidden);
 
          int32 sortColumn = -1;                     (void) settingsMsg.FindInt32("amw_sc", &sortColumn);
          int32 sortOrder  = (int32) AscendingOrder; (void) settingsMsg.FindInt32("amw_so", &sortOrder);
@@ -1117,21 +1120,21 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
    {
       String temp;
 
-      if ((args.FindString("quit", temp) == B_NO_ERROR)||(args.FindString("autoquit", temp) == B_NO_ERROR))
+      if ((args.FindString("quit", temp).IsOK())||(args.FindString("autoquit", temp).IsOK()))
       {
          _quitOnIdle = ParseBool(temp, true);
          if (temp.ToLowerCase() == "force") _forceQuit = _quitOnIdle = true;
       }
-      if (((args.FindString("pause", temp) == B_NO_ERROR)||(args.FindString("paused", temp) == B_NO_ERROR))&&(temp.HasChars())) _pause->setChecked(ParseBool(temp, true));
-      if ((args.FindString("dir", temp) == B_NO_ERROR)||(args.FindString("dest", temp) == B_NO_ERROR)||(args.FindString("destdir", temp) == B_NO_ERROR)) SetDestination(temp);
-      if ((args.FindString("format", temp) == B_NO_ERROR)||(args.FindString("destformat", temp) == B_NO_ERROR)) SetTargetFormat(GetFileFormatByName(ToQ(temp()), AUDIO_FORMAT_SOURCE));
-      if ((args.FindString("rate", temp) == B_NO_ERROR)||(args.FindString("destrate", temp) == B_NO_ERROR)) SetTargetSampleRate(GetSampleRateByName(ToQ(temp()), AUDIO_RATE_SOURCE));
-      if ((args.FindString("width", temp) == B_NO_ERROR)||(args.FindString("destwidth", temp) == B_NO_ERROR)) SetTargetSampleWidth(GetSampleWidthByName(ToQ(temp()), AUDIO_WIDTH_SOURCE));
-      if ((args.FindString("threads", temp) == B_NO_ERROR)||(args.FindString("maxthreads", temp) == B_NO_ERROR)) SetMaxProcesses(muscleClamp(atoi(temp()), 1, 9));
-      if ((args.FindString("split", temp) == B_NO_ERROR)||(args.FindString("splitmulti", temp) == B_NO_ERROR)||(args.FindString("splitfiles", temp) == B_NO_ERROR)||(args.FindString("splitmultifiles", temp) == B_NO_ERROR)||(args.FindString("splitmultitrackfiles", temp) == B_NO_ERROR)) SetSplitMultiTrackFiles(ParseBool(temp, true));
-      if ((args.FindString("inplace", temp) == B_NO_ERROR)||(args.FindString("convertinplace", temp) == B_NO_ERROR)) SetInPlaceConversions(ParseBool(temp, true));
-      if ((args.FindString("confirm", temp) == B_NO_ERROR)||(args.FindString("confirmoverwrite", temp) == B_NO_ERROR)||(args.FindString("confirmoverwrites", temp)==B_NO_ERROR)) SetConfirmOverwrites(ParseBool(temp, true));
-      if ((args.FindString("qual", temp) == B_NO_ERROR)||(args.FindString("quality", temp) == B_NO_ERROR)||(args.FindString("conversionquality", temp) == B_NO_ERROR)) SetConversionQuality(GetConversionQualityByName(ToQ(temp()), DEFAULT_AUDIO_CONVERSION_QUALITY));
+      if (((args.FindString("pause", temp).IsOK())||(args.FindString("paused", temp).IsOK()))&&(temp.HasChars())) _pause->setChecked(ParseBool(temp, true));
+      if ((args.FindString("dir", temp).IsOK())||(args.FindString("dest", temp).IsOK())||(args.FindString("destdir", temp).IsOK())) SetDestination(temp);
+      if ((args.FindString("format", temp).IsOK())||(args.FindString("destformat", temp).IsOK())) SetTargetFormat(GetFileFormatByName(ToQ(temp()), AUDIO_FORMAT_SOURCE));
+      if ((args.FindString("rate", temp).IsOK())||(args.FindString("destrate", temp).IsOK())) SetTargetSampleRate(GetSampleRateByName(ToQ(temp()), AUDIO_RATE_SOURCE));
+      if ((args.FindString("width", temp).IsOK())||(args.FindString("destwidth", temp).IsOK())) SetTargetSampleWidth(GetSampleWidthByName(ToQ(temp()), AUDIO_WIDTH_SOURCE));
+      if ((args.FindString("threads", temp).IsOK())||(args.FindString("maxthreads", temp).IsOK())) SetMaxProcesses(muscleClamp(atoi(temp()), 1, 9));
+      if ((args.FindString("split", temp).IsOK())||(args.FindString("splitmulti", temp).IsOK())||(args.FindString("splitfiles", temp).IsOK())||(args.FindString("splitmultifiles", temp).IsOK())||(args.FindString("splitmultitrackfiles", temp).IsOK())) SetSplitMultiTrackFiles(ParseBool(temp, true));
+      if ((args.FindString("inplace", temp).IsOK())||(args.FindString("convertinplace", temp).IsOK())) SetInPlaceConversions(ParseBool(temp, true));
+      if ((args.FindString("confirm", temp).IsOK())||(args.FindString("confirmoverwrite", temp).IsOK())||(args.FindString("confirmoverwrites", temp).IsOK())) SetConfirmOverwrites(ParseBool(temp, true));
+      if ((args.FindString("qual", temp).IsOK())||(args.FindString("quality", temp).IsOK())||(args.FindString("conversionquality", temp).IsOK())) SetConversionQuality(GetConversionQualityByName(ToQ(temp()), DEFAULT_AUDIO_CONVERSION_QUALITY));
 
       if (args.HasName("disable_bwf"))
       {
@@ -1139,7 +1142,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          printf("disable_bwf keyword specified; no broadcast WAV info will be read or written.\n");
       }
 
-      for (uint32 i=0; args.FindString("file", i, temp) == B_NO_ERROR; i++) AddFile(LocalToQ(temp()));
+      for (uint32 i=0; args.FindString("file", i, temp).IsOK(); i++) AddFile(LocalToQ(temp()));
    }
 
    QTimer::singleShot(1, this, SLOT(UpdateButtons()));  // do this after event loop starts, in case we need to close() ASAP
@@ -1151,7 +1154,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
 void AudioMoveWindow :: ConvertInPlaceToggled()
 {
    Message dontask;
-   if ((GetInPlaceConversions())&&(LoadMessageFromRegistry("cip_dontask", dontask) != B_NO_ERROR))
+   if ((GetInPlaceConversions())&&(LoadMessageFromRegistry("cip_dontask", dontask).IsError()))
    {
       AudioMoveMessageBox * amb = new AudioMoveMessageBox(true, this, SLOT(ConvertInPlaceWarningOptionSelected(int)), tr("Convert in Place Warning"), tr("When running in Convert-in-Place mode, AudioMove will overwrite your input files with the converted output files.\n\nOnce a Convert-in-Place operation has completed, it cannot be undone.\n\nAre you sure you want to use Convert-in-Place mode?"), QMessageBox::Warning, QMessageBox::YesToAll, QMessageBox::Yes, QMessageBox::No, this);  // FogBugz #4381
       amb->setWindowModality(WindowModal);
@@ -1680,26 +1683,26 @@ void AudioMoveWindow :: AddFile(const QString & qqfn)
    String fn = LocalFromQ(qfn);
    MessageRef setupMsg = GetMessageFromPool(SETUP_COMMAND_SETUP);
    if ((setupMsg())&&
-       (setupMsg()->AddString(SETUP_NAME_SOURCEFILE, LocalFromQ(qfn))           == B_NO_ERROR)&&
-       ((GetInPlaceConversions())||(setupMsg()->AddString(SETUP_NAME_DESTDIR, GetDestination()) == B_NO_ERROR))&&
-       (setupMsg()->AddInt32(SETUP_NAME_TARGETFORMAT, GetTargetFormat())        == B_NO_ERROR)&&
-       (setupMsg()->AddInt32(SETUP_NAME_TARGETRATE, GetTargetSampleRate())      == B_NO_ERROR)&&
-       (setupMsg()->AddInt32(SETUP_NAME_TARGETWIDTH, GetTargetSampleWidth())    == B_NO_ERROR)&&
-       (setupMsg()->AddInt32(SETUP_NAME_QUALITY, GetConversionQuality())        == B_NO_ERROR)&&
-       (setupMsg()->AddBool(SETUP_NAME_SPLITFILES, GetSplitMultiTrackFiles())   == B_NO_ERROR))
+       (setupMsg()->AddString(SETUP_NAME_SOURCEFILE, LocalFromQ(qfn))          .IsOK())&&
+       ((GetInPlaceConversions())||(setupMsg()->AddString(SETUP_NAME_DESTDIR, GetDestination()).IsOK()))&&
+       (setupMsg()->AddInt32(SETUP_NAME_TARGETFORMAT, GetTargetFormat())       .IsOK())&&
+       (setupMsg()->AddInt32(SETUP_NAME_TARGETRATE, GetTargetSampleRate())     .IsOK())&&
+       (setupMsg()->AddInt32(SETUP_NAME_TARGETWIDTH, GetTargetSampleWidth())   .IsOK())&&
+       (setupMsg()->AddInt32(SETUP_NAME_QUALITY, GetConversionQuality())       .IsOK())&&
+       (setupMsg()->AddBool(SETUP_NAME_SPLITFILES, GetSplitMultiTrackFiles())  .IsOK()))
    {
       // demand-allocate the setup thread
       if (_audioSetupThread == NULL)
       {
          _audioSetupThread = new AudioSetupThread(this);
-         if (_audioSetupThread->StartInternalThread() != B_NO_ERROR)
+         if (_audioSetupThread->StartInternalThread().IsError())
          {
             LogTime(MUSCLE_LOG_ERROR, "Couldn't start audio setup thread!\n");
             delete _audioSetupThread;
             _audioSetupThread = NULL;
          }
       }
-      if ((_audioSetupThread)&&(_audioSetupThread->SendMessageToInternalThread(setupMsg) == B_NO_ERROR)) _numInitializing++;
+      if ((_audioSetupThread)&&(_audioSetupThread->SendMessageToInternalThread(setupMsg).IsOK())) _numInitializing++;
    }
 }
 
@@ -1721,7 +1724,7 @@ void AudioMoveWindow :: DequeueTransfers()
                (void) next->StartInternalThreads();  // only has an effect the first time
             // fall thru!
             case MOVE_STATUS_PROCESSING:
-               if (next->SendBuffers(true) == B_NO_ERROR) numActive++;
+               if (next->SendBuffers(true).IsOK()) numActive++;
                if (update) next->Update(true);
             break;
          }
@@ -1778,7 +1781,7 @@ void AudioMoveWindow :: CreateLCSDisk(const QStringList & f)
 
       _lcsDiskFile = fileName;
       if (_createLCSDisk) _createLCSDisk->hide();
-      if (CreateVDiskFile(GetDestination()(), LocalFromQ(_lcsDiskFile), this) != B_NO_ERROR) QMessageBox::critical(this, tr(".lcsDisk File Save Error"), tr("There was an error saving file\n\n%1\n\nto disk.").arg(_lcsDiskFile));
+      if (CreateVDiskFile(GetDestination()(), LocalFromQ(_lcsDiskFile), this).IsError()) QMessageBox::critical(this, tr(".lcsDisk File Save Error"), tr("There was an error saving file\n\n%1\n\nto disk.").arg(_lcsDiskFile));
    }
 }
 
@@ -1871,7 +1874,7 @@ void AudioMoveWindow :: UpdateDestinationPathStatus()
 {
    String s = FromQ(_outputFolderPath->text());
    if (s.EndsWith("/") == false) s += '/';
-   if (EnsureFileFolderExists(s+"dummy", false) == B_NO_ERROR) _outputFolderPath->setPalette(QPalette());
+   if (EnsureFileFolderExists(s+"dummy", false).IsOK()) _outputFolderPath->setPalette(QPalette());
    else 
    {
       QPalette p = _outputFolderPath->palette();
@@ -1905,15 +1908,15 @@ bool AudioMoveWindow :: event(QEvent * evt)
                   _numInitializing--;
 
                   MessageRef subMsg;
-                  for (int32 i=0; msg()->FindMessage(SETUP_NAME_SETUPRESULT, i, subMsg) == B_NO_ERROR; i++)
+                  for (int32 i=0; msg()->FindMessage(SETUP_NAME_SETUPRESULT, i, subMsg).IsOK(); i++)
                   {
                      RefCountableRef itag, otag;
                      AudioMoveThreadRef inputThread, outputThread;
                      uint32 quality;
-                     if ((subMsg()->FindTag(SETUP_NAME_INPUTTHREAD, itag) == B_NO_ERROR)&&(subMsg()->FindTag(SETUP_NAME_OUTPUTTHREAD, otag) == B_NO_ERROR)&&(subMsg()->FindInt32(SETUP_NAME_QUALITY, (int32*)&quality) == B_NO_ERROR)&&(inputThread.SetFromRefCountableRef(itag) == B_NO_ERROR)&&(outputThread.SetFromRefCountableRef(otag) == B_NO_ERROR))
+                     if ((subMsg()->FindTag(SETUP_NAME_INPUTTHREAD, itag).IsOK())&&(subMsg()->FindTag(SETUP_NAME_OUTPUTTHREAD, otag).IsOK())&&(subMsg()->FindInt32(SETUP_NAME_QUALITY, (int32*)&quality).IsOK())&&(inputThread.SetFromRefCountableRef(itag).IsOK())&&(outputThread.SetFromRefCountableRef(otag).IsOK()))
                      {
                         AudioMoveItem * ami = new AudioMoveItem(++_tagCounter, this, _processList, inputThread, AudioMoveThreadRef(new SampleRateThread(GetSampleRateValueFromCode(inputThread()->GetOutputFileSampleRate()), GetSampleRateValueFromCode(outputThread()->GetInputFileSampleRate()), quality, inputThread()->GetFileStreams())), outputThread);
-                        if (_moveItems.Put(ami->GetTag(), ami) == B_NO_ERROR)
+                        if (_moveItems.Put(ami->GetTag(), ami).IsOK())
                         {
                            String errorString; (void) subMsg()->FindString(SETUP_NAME_ERROR, errorString);
                            if (errorString.HasChars()) 
@@ -1921,11 +1924,11 @@ bool AudioMoveWindow :: event(QEvent * evt)
                               ami->SetStatus(MOVE_STATUS_ERROR);
                               ami->SetStatusString(ToQ(errorString()));
                            }
-                           else if ((GetConfirmOverwrites())&&(subMsg()->HasName(SETUP_NAME_FILESTOBEOVERWRITTEN))&&(_pendingConfirmations.Put(ami, true) == B_NO_ERROR)) 
+                           else if ((GetConfirmOverwrites())&&(subMsg()->HasName(SETUP_NAME_FILESTOBEOVERWRITTEN))&&(_pendingConfirmations.Put(ami, true).IsOK())) 
                            {
                               QString filesStr;
                               const char * next;
-                              for (int32 i=0; subMsg()->FindString(SETUP_NAME_FILESTOBEOVERWRITTEN, i, &next) == B_NO_ERROR; i++)
+                              for (int32 i=0; subMsg()->FindString(SETUP_NAME_FILESTOBEOVERWRITTEN, i, &next).IsOK(); i++)
                               {
                                  if (filesStr.length() > 0) filesStr += '\n';
                                  filesStr += LocalToQ(next);
@@ -1944,7 +1947,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
                else
                {
                   AudioMoveItem * item;
-                  if (_moveItems.Get(msg()->what, item) == B_NO_ERROR)
+                  if (_moveItems.Get(msg()->what, item).IsOK())
                   {
                      item->MessageReceivedFromUpstream(msg);
                      if (item->GetStatus() != MOVE_STATUS_PROCESSING) DequeueTransfers();

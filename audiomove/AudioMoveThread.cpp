@@ -41,7 +41,7 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
    {
       if (msg()->HasName(AUDIOMOVE_NAME_OPENFILE))
       {
-         if (OpenFile() != B_NO_ERROR) 
+         if (OpenFile().IsError()) 
          {
             char buf[128]; sprintf(buf, "Couldn't open %s file", IsOutput() ? "output" : "input");
             msg()->AddString(AUDIOMOVE_NAME_STATUS, buf);
@@ -50,10 +50,10 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
       else 
       {
          bool isLastBuffer;
-         if (msg()->FindBool(AUDIOMOVE_NAME_ISLAST, &isLastBuffer) != B_NO_ERROR) isLastBuffer = false;
+         if (msg()->FindBool(AUDIOMOVE_NAME_ISLAST, &isLastBuffer).IsError()) isLastBuffer = false;
 
          FlatCountableRef fcRef;
-         if (msg()->FindFlat(AUDIOMOVE_NAME_BUF, fcRef) == B_NO_ERROR)
+         if (msg()->FindFlat(AUDIOMOVE_NAME_BUF, fcRef).IsOK())
          {
             ByteBufferRef bufRef(fcRef.GetRefCountableRef(), true);
             if (bufRef())

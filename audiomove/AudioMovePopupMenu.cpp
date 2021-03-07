@@ -102,7 +102,7 @@ void AudioMovePopupMenu :: EmitSignal()
 void AudioMovePopupMenu :: ActionTriggered(QAction * act)
 {
    int id;
-   if (_actionToID.Get(act, id) == B_NO_ERROR) 
+   if (_actionToID.Get(act, id).IsOK()) 
    {
       _actionToEmit = act;
       if (isHidden()) EmitSignal();

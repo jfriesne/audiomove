@@ -188,7 +188,7 @@ static ::HANDLE GetDriveFileHandle(BYTE i)
 static status_t GetDriveInformation(BYTE i, DRIVE * pDrive)
 {
    ::HANDLE fh = GetDriveFileHandle(i);
-   if (fh == AUDIOMOVE_INVALID_HANDLE_VALUE) return B_ERROR;
+   if (fh == AUDIOMOVE_INVALID_HANDLE_VALUE) return B_ERROR("GetDriveFileHandle() failed");
 
    /*
     * Get the drive inquiry data
@@ -207,7 +207,7 @@ static status_t GetDriveInformation(BYTE i, DRIVE * pDrive)
    swb.spt.Cdb[4]      = NTSCSI_HA_INQUIRY_SIZE;
 
    ULONG returned;
-   if (!DeviceIoControl(fh, IOCTL_SCSI_PASS_THROUGH_DIRECT, &swb, sizeof(swb), &swb, sizeof(swb), &returned, NULL)) {CloseHandle(fh); return B_ERROR;}
+   if (!DeviceIoControl(fh, IOCTL_SCSI_PASS_THROUGH_DIRECT, &swb, sizeof(swb), &swb, sizeof(swb), &returned, NULL)) {CloseHandle(fh); return B_ERROR("DeviceIOControl() failed A");}
    memcpy(pDrive->inqData, inqData, NTSCSI_HA_INQUIRY_SIZE);
 
    /*
@@ -224,12 +224,12 @@ static status_t GetDriveInformation(BYTE i, DRIVE * pDrive)
       pDrive->tgt         = scsiAddr.TargetId;
       pDrive->lun         = scsiAddr.Lun;
       pDrive->driveLetter = i;
-   } 
+   }
    else 
    {
       pDrive->bUsed   = false;
       CloseHandle(fh);
-      return B_ERROR;
+      return B_ERROR("DeviceIOControl() failed B");
    }
    CloseHandle(fh);
    return B_NO_ERROR;
@@ -243,7 +243,7 @@ static HCDROM OpenCDHandle(char driveLetter)
 
   int whichDrive = -1;
   DRIVE drive; memset(&drive, 0, sizeof(drive));
-  if (GetDriveInformation(driveLetter-'A', &drive) == B_NO_ERROR)
+  if (GetDriveInformation(driveLetter-'A', &drive).IsOK())
   {
      for (int i=0; i<cdlist.num; i++)
      {
@@ -296,7 +296,7 @@ DWORD AKRipThread::AKRipDriveInterface :: ReadCDAudio(LPTRACKBUF trackBuf)
    // I don't think akrip can handle multithreaded access,
    // so I'm serializing calls with a mutex.
    DWORD ret = SS_ERR;
-   if (_cdMutex.Lock() == B_NO_ERROR)
+   if (_cdMutex.Lock().IsOK())
    {
       ret = ReadCDAudioLBA(_cdHandle, trackBuf);
       _cdMutex.Unlock();
@@ -307,12 +307,12 @@ DWORD AKRipThread::AKRipDriveInterface :: ReadCDAudio(LPTRACKBUF trackBuf)
 AKRipThread::AKRipDriveInterface * AKRipThread::OpenAKRipDriveInterface(char driveLetter)
 {
    AKRipDriveInterface * ret = NULL;
-   if (_driveDirectoryMutex.Lock() == B_NO_ERROR)
+   if (_driveDirectoryMutex.Lock().IsOK())
    {
-      if (_driveDirectory.Get(driveLetter, ret) != B_NO_ERROR)
+      if (_driveDirectory.Get(driveLetter, ret).IsError())
       {
          ret = new AKRipDriveInterface(driveLetter);
-         if ((ret->IsValid() == false)||(_driveDirectory.Put(driveLetter, ret) != B_NO_ERROR))
+         if ((ret->IsValid() == false)||(_driveDirectory.Put(driveLetter, ret).IsError()))
          {
             delete ret; 
             ret = NULL;
@@ -326,12 +326,12 @@ AKRipThread::AKRipDriveInterface * AKRipThread::OpenAKRipDriveInterface(char dri
 
 void AKRipThread :: CloseAKRipDriveInterface(AKRipDriveInterface * di)
 {
-   if ((di)&&(_driveDirectoryMutex.Lock() == B_NO_ERROR))
+   if ((di)&&(_driveDirectoryMutex.Lock().IsOK()))
    {
       if (di->DecrementRefCount())
       {
          AKRipDriveInterface * paranoiaCheck;
-         if (_driveDirectory.Remove(di->GetDriveLetter(), paranoiaCheck) == B_NO_ERROR)
+         if (_driveDirectory.Remove(di->GetDriveLetter(), paranoiaCheck).IsOK())
          {
             if (paranoiaCheck != di) printf("ERROR, deleting wrong drive interface!  %p/%p\n", di, paranoiaCheck);
             delete di;
@@ -357,11 +357,11 @@ status_t AKRipThread :: OpenFile()
 {
    CloseFile(CLOSE_FLAG_FINAL);  // paranoia
    
-   if (_trackIndex < 0) return B_ERROR;
+   if (_trackIndex < 0) return B_BAD_OBJECT;
 
-   uint32 maxLen = NUM_SECTORS_PER_TRACKBUF*NUM_BYTES_PER_SECTOR;
+   const uint32 maxLen = NUM_SECTORS_PER_TRACKBUF*NUM_BYTES_PER_SECTOR;
    _trackBuf = (LPTRACKBUF) malloc(TRACKBUFEXTRA+maxLen);
-   if (_trackBuf == NULL) return B_ERROR;
+   if (_trackBuf == NULL) return B_ERROR("malloc() failed");
 
    memset(_trackBuf, 0, TRACKBUFEXTRA);
    _trackBuf->startFrame  = 0;
@@ -438,19 +438,19 @@ status_t AKRipThread :: CacheCDSectors(uint32 firstSector, uint32 numSectors)
       }
       if (dwStatus != SS_COMP) return B_ERROR;
 
-      uint32 numSectorsRead = _trackBuf->numFrames;
-      if (numSectorsRead == 0) return B_ERROR;  // paranoia
+      const uint32 numSectorsRead = _trackBuf->numFrames;
+      if (numSectorsRead == 0) return B_ERROR("numSectorsRead was 0");  // paranoia
 
       for (uint32 i=0; i<numSectorsRead; i++)
       {
          ByteBufferRef bufRef = GetByteBufferFromPool(NUM_SAMPLES_PER_SECTOR*NUM_BYTES_PER_SAMPLEFL);
-         if (bufRef() == NULL) return B_ERROR;
+         if (bufRef() == NULL) MRETURN_OUT_OF_MEMORY;
 
          float * out = (float *) bufRef()->GetBuffer();
          const int16 * in = (const int16 *)(_trackBuf->buf+_trackBuf->startOffset+(i*NUM_BYTES_PER_SECTOR));
          for (uint32 j=0; j<NUM_SAMPLES_PER_SECTOR; j++) out[j] = (in[j]*(1.0f/0x8000));
 
-         if (_cachedCDAudio.Put(curSector+i, bufRef) != B_NO_ERROR) return B_ERROR;
+         MRETURN_ON_ERROR(_cachedCDAudio.Put(curSector+i, bufRef));
       }
       curSector  += numSectorsRead;
       numSectors -= numSectorsRead;
@@ -468,13 +468,13 @@ status_t AKRipThread :: ReadCDAudio(float * outBuf, int64 curFrame, uint32 numFr
    while((_cachedCDAudio.HasItems())&&(*_cachedCDAudio.GetFirstKey() < firstSector)) _cachedCDAudio.RemoveFirst();
 
    // Now make sure that our required sectors are loaded
-   if (CacheCDSectors(firstSector, lastSector-firstSector) != B_NO_ERROR) return B_ERROR; 
+   MRETURN_ON_ERROR(CacheCDSectors(firstSector, lastSector-firstSector));
    
    // Now we'll go through the sectors and assemble their data into (outBuf)
    while(numFrames > 0)
    {
       const ByteBufferRef * bbr = _cachedCDAudio.Get(curFrame/NUM_FRAMES_PER_SECTOR);
-      if (bbr == NULL) return B_ERROR;
+      if (bbr == NULL) return B_DATA_NOT_FOUND;
 
       const float * sBuf     = (const float *) bbr->GetItemPointer()->GetBuffer();
       uint32 offsetFrames    = curFrame%NUM_FRAMES_PER_SECTOR;
@@ -496,7 +496,7 @@ ByteBufferRef AKRipThread :: ProcessBuffer(const ByteBufferRef & buf, QString & 
       if ((numBytes % NUM_BYTES_PER_SAMPLEFL) == 0)
       {
          const uint32 numFramesToRead = muscleMin((uint32)(numBytes/NUM_BYTES_PER_FRAMEFL), (uint32)(_numFrames-_readOffsetFrames));
-         if (ReadCDAudio((float *)buf()->GetBuffer(), _readOffsetFrames, numFramesToRead) == B_NO_ERROR)
+         if (ReadCDAudio((float *)buf()->GetBuffer(), _readOffsetFrames, numFramesToRead).IsOK())
          {
             (void) buf()->SetNumBytes(numFramesToRead*NUM_BYTES_PER_FRAMEFL, true);
             if (isLastBuffer) 

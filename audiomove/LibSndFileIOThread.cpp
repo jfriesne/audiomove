@@ -84,7 +84,7 @@ status_t LibSndFileIOThread :: OpenFile()
          case AUDIO_FORMAT_OGGOPUS:  info.format = SF_FORMAT_OGG  | SF_FORMAT_OPUS;   break;
 
          default:  
-            return B_ERROR;  // we only support the above-listed audio formats for output... for now anyway
+            return B_ERROR("Unsupported Output file format");  // we only support the above-listed audio formats for output... for now anyway
       }
 
       if ((_outputFileFormat != AUDIO_FORMAT_OGGVORBIS)&&(_outputFileFormat != AUDIO_FORMAT_OGGOPUS))  // Ogg doesn't want to know about sample widths?
@@ -112,7 +112,7 @@ status_t LibSndFileIOThread :: OpenFile()
          }
       }
 
-      if (EnsureFileFolderExists(_checkPath, false) != B_NO_ERROR) return B_ERROR;  // mount-point fix for v1.11
+      MRETURN_ON_ERROR(EnsureFileFolderExists(_checkPath, false));  // mount-point fix for v1.11
       (void) EnsureFileFolderExists(_fileName, true);  // if the base directory exists, then it's okay to put sub-dirs under it
 
       if ((_splitFiles)&&(_numWriteStreams > 1))
@@ -124,7 +124,7 @@ status_t LibSndFileIOThread :: OpenFile()
           {
              String fileName = (lastDot>=0) ? (_fileName.Substring(0, lastDot)+String("_c%1").Arg(i+1)+_fileName.Substring(lastDot)) : (_fileName+String("_c%1").Arg(i+1));
              SNDFILE * file = OpenFileForWriting(fileName, info);  // don't merge into the PutOutputFile() call!  This may change (fileName)!
-             if (PutOutputFile(fileName, file) != B_NO_ERROR) break;
+             if (PutOutputFile(fileName, file).IsError()) break;
           }
           if (_files.GetNumItems() == _numWriteStreams)
           {
@@ -136,7 +136,7 @@ status_t LibSndFileIOThread :: OpenFile()
       { 
          String fn = _fileName;
          SNDFILE * file = OpenFileForWriting(fn, info);  // don't merge into the PutOutputFile() call!  This may change (fn)!
-         if (PutOutputFile(fn, file) == B_NO_ERROR)
+         if (PutOutputFile(fn, file).IsOK())
          {
             _numFrames = 0;  // no data written, yet!
             return B_NO_ERROR;
@@ -148,7 +148,7 @@ status_t LibSndFileIOThread :: OpenFile()
       SNDFILE * file = sf_open(_fileName(), SFM_READ, &info);
       if (file)
       {
-         if (_files.Put(_fileName, file) == B_NO_ERROR)
+         if (_files.Put(_fileName, file).IsOK())
          {
             // Read mode:  extract attributes from libsndfile
             switch(info.format & SF_FORMAT_TYPEMASK)
@@ -199,9 +199,9 @@ status_t LibSndFileIOThread :: PutOutputFile(const String & fn, SNDFILE * file)
 {
    if (file)
    {
-      if (_files.Put(fn, file) == B_NO_ERROR)
+      if (_files.Put(fn, file).IsOK())
       {
-         if (_tempFiles.Put(fn, file) == B_NO_ERROR) return B_NO_ERROR;  // success!
+         if (_tempFiles.Put(fn, file).IsOK()) return B_NO_ERROR;  // success!
          (void) _files.Remove(fn);  // roll back
       }
       sf_close(file); 
@@ -251,14 +251,16 @@ status_t LibSndFileIOThread :: RescaleAudioSegment(uint64 startOffset, uint64 nu
       uint64 tempSizeFrames = tempBufSize/_numStreams;
       while(numFrames > 0)
       {
-         uint32 numFramesToRead = muscleMin(numFrames, tempSizeFrames);
-         uint32 numSamples      = numFramesToRead*_numStreams;
+         const uint32 numFramesToRead = muscleMin(numFrames, tempSizeFrames);
+         const uint32 numSamples      = numFramesToRead*_numStreams;
 
-         if (DoSeekFiles(startOffset) != B_NO_ERROR) return B_ERROR;
-         if (DoReadFromFiles(tempBuf, numSamples) != B_NO_ERROR) return B_ERROR;
+         MRETURN_ON_ERROR(DoSeekFiles(startOffset));
+         MRETURN_ON_ERROR(DoReadFromFiles(tempBuf, numSamples));
+
          RescaleAudioBuffer(tempBuf, numSamples, scaleBy);
-         if (DoSeekFiles(startOffset) != B_NO_ERROR) return B_ERROR;
-         if (DoWriteToFiles(tempBuf, numSamples) != B_NO_ERROR) return B_ERROR;
+
+         MRETURN_ON_ERROR(DoSeekFiles(startOffset));
+         MRETURN_ON_ERROR(DoWriteToFiles(tempBuf, numSamples));
 
          startOffset += numFramesToRead;
          numFrames   -= numFramesToRead;
@@ -327,7 +329,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                RescaleAudioBuffer(samples, numSamples, 1.0f/_currentMaxOutputSample);
             }
 
-            if (DoWriteToFiles(samples, numSamples) == B_NO_ERROR)
+            if (DoWriteToFiles(samples, numSamples).IsOK())
             {
                _numFrames += (numSamples/_numStreams);
                if (isLastBuffer) 
@@ -343,7 +345,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                      {
                         int64 nextOffset    = iter.GetKey();
                         float nextMaxSample = iter.GetValue();
-                        if (RescaleAudioSegment(prevOffset, nextOffset-prevOffset, finalScaling*prevMaxSample, tempBuf, TEMP_BUF_SIZE) != B_NO_ERROR)
+                        if (RescaleAudioSegment(prevOffset, nextOffset-prevOffset, finalScaling*prevMaxSample, tempBuf, TEMP_BUF_SIZE).IsError())
                         {
                            retErrStr = qApp->translate("LibSndFileIOThread", "Error rescaling segment");
                            break;
@@ -445,7 +447,7 @@ status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, cons
              if (fpCheck)
              {
                 fclose(fpCheck);
-                if (msg.AddString(fn, fileName) != B_NO_ERROR) return B_ERROR;
+                MRETURN_ON_ERROR(msg.AddString(fn, fileName));
              } 
           }
       }
@@ -455,7 +457,7 @@ status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, cons
          if (fpCheck)
          {
             fclose(fpCheck);
-            if (msg.AddString(fn, _fileName) != B_NO_ERROR) return B_ERROR;
+            MRETURN_ON_ERROR(msg.AddString(fn, _fileName));
          }
       }
    }
@@ -464,27 +466,27 @@ status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, cons
 
 status_t LibSndFileIOThread :: DoReadFromFiles(float * samples, uint32 numSamples)
 {
-   uint32 numStreams = _files.GetNumItems();
+   const uint32 numStreams = _files.GetNumItems();
    switch(numStreams)
    {
       case 0:
-         return B_ERROR;
+         return B_BAD_OBJECT;
 
       case 1: 
          // Easy case:  we are just reading from a single file
-         return (sf_read_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR;
+         return (sf_read_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR("sf_read_float() failed A");
 
       default:
       {
          // Harder case:  we are merging in data from multiple sub-files; we need to read one stream from each
-         uint32 numFrames = numSamples/numStreams;
-         if (_splitBuf.SetNumBytes(numFrames*sizeof(float), false) != B_NO_ERROR) return B_ERROR;  // space for one channel
+         const uint32 numFrames = numSamples/numStreams;
+         MRETURN_ON_ERROR(_splitBuf.SetNumBytes(numFrames*sizeof(float), false));  // space for one channel
 
          float * in = (float *) _splitBuf.GetBuffer();
          uint32 i=0;
          for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
          {
-            if (sf_read_float(iter.GetValue(), in, numFrames) != numFrames) return B_ERROR;
+            if (sf_read_float(iter.GetValue(), in, numFrames) != numFrames) return B_ERROR("sf_read_float() failed B");
             float * out = &samples[i];
             for (uint32 j=0; j<numFrames; j++) out[j*numStreams] = in[j];
             i++;
@@ -503,8 +505,8 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
       {
          while(numSamples > 0)
          {
-            uint32 numSamplesToWrite = muscleMin(numSamples, MAX_OGG_SAMPLES_PER_CALL);
-            if (DoWriteToFiles(samples, numSamplesToWrite) != B_NO_ERROR) return B_ERROR;
+            const uint32 numSamplesToWrite = muscleMin(numSamples, MAX_OGG_SAMPLES_PER_CALL);
+            MRETURN_ON_ERROR(DoWriteToFiles(samples, numSamplesToWrite));
             samples    += numSamplesToWrite;
             numSamples -= numSamplesToWrite;
          }
@@ -512,21 +514,21 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
       }
    }
 
-   uint32 numStreams = _files.GetNumItems();
+   const uint32 numStreams = _files.GetNumItems();
    switch(numStreams)
    {
       case 0:
-         return B_ERROR;
+         return B_BAD_OBJECT;
 
       case 1: 
          // Easy case:  we are just writing to a single file
-         return (sf_write_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR;
+         return (sf_write_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR("sf_write_float() failed A");
 
       default:
       {
          // Harder case:  we are splitting out to multiple sub-files; we need to write one stream to each
-         uint32 numFrames = numSamples/numStreams;
-         if (_splitBuf.SetNumBytes(numFrames*sizeof(float), false) != B_NO_ERROR) return B_ERROR;  // space for one channel
+         const uint32 numFrames = numSamples/numStreams;
+         MRETURN_ON_ERROR(_splitBuf.SetNumBytes(numFrames*sizeof(float), false));  // space for one channel
 
          float * out = (float *) _splitBuf.GetBuffer();
          uint32 i = 0;
@@ -534,7 +536,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
          {
             const float * in = &samples[i];
             for (uint32 j=0; j<numFrames; j++) out[j] = in[j*numStreams];
-            if (sf_write_float(iter.GetValue(), out, numFrames) != numFrames) return B_ERROR;
+            if (sf_write_float(iter.GetValue(), out, numFrames) != numFrames) return B_ERROR("sf_write_float() failed B");
             i++;
          }
          return B_NO_ERROR;
@@ -545,7 +547,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
 status_t LibSndFileIOThread :: DoSeekFiles(uint64 offset)
 {
    for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) 
-      if (sf_seek(iter.GetValue(), offset, SEEK_SET) != (sf_count_t)offset) return B_ERROR;
+      if (sf_seek(iter.GetValue(), offset, SEEK_SET) != (sf_count_t)offset) return B_ERROR("sf_seek() failed");
    return B_NO_ERROR;
 }
 
