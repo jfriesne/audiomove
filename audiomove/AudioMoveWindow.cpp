@@ -437,7 +437,7 @@ status_t AudioMoveItem :: StartInternalThreads()
    if (_internalThreadsStarted == false)
    {
       MessageRef startup = GetMessageFromPool(_tag);
-      MRETURN_ON_NULL(startup());
+      MRETURN_OOM_ON_NULL(startup());
 
       status_t ret;
       if ((startup()->AddBool(AUDIOMOVE_NAME_OPENFILE, true).IsOK(ret))&&(_threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(startup).IsOK(ret)))

@@ -444,7 +444,7 @@ status_t AKRipThread :: CacheCDSectors(uint32 firstSector, uint32 numSectors)
       for (uint32 i=0; i<numSectorsRead; i++)
       {
          ByteBufferRef bufRef = GetByteBufferFromPool(NUM_SAMPLES_PER_SECTOR*NUM_BYTES_PER_SAMPLEFL);
-         if (bufRef() == NULL) MRETURN_OUT_OF_MEMORY;
+         MRETURN_OOM_ON_NULL(bufRef());
 
          float * out = (float *) bufRef()->GetBuffer();
          const int16 * in = (const int16 *)(_trackBuf->buf+_trackBuf->startOffset+(i*NUM_BYTES_PER_SECTOR));

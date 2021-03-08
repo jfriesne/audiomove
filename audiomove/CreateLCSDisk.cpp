@@ -56,7 +56,7 @@ static status_t CreateVDiskFileAux(const String & node, Message & msg, CreateVDi
          {
             dlg->SetCurrentFileName(ToQ(node.Substring("/")()));
             MessageRef subMsg = GetMessageFromPool(CUEMIXER_REPLY_VIRTUALDRIVEFILE);
-            MRETURN_ON_NULL(subMsg());
+            MRETURN_OOM_ON_NULL(subMsg());
             MRETURN_ON_ERROR(CreateVDiskFileAux(node+n.Prepend("/"), *subMsg(), dlg));
             if (subMsg()->GetNumNames() > 0) MRETURN_ON_ERROR(msg.AddMessage(n, subMsg));
          }
@@ -112,7 +112,7 @@ void CreateVDiskDialog :: SetCurrentFileName(const QString & s)
 status_t CreateVDiskFile(const char * targetDisk, const char * targetFile, QWidget * parent)
 {
    MessageRef msg = GetMessageFromPool(CUEMIXER_REPLY_VIRTUALDRIVEFILE);
-   MRETURN_ON_NULL(msg());
+   MRETURN_OOM_ON_NULL(msg());
 
    CreateVDiskDialog * dlg = new CreateVDiskDialog(parent);
    dlg->show();
