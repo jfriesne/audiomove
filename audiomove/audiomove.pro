@@ -11,7 +11,7 @@ win32:DEFINES += _MT _WIN32_WINNT=0x0501 NDEBUG __WIN32__ _USE_MATH_DEFINES _CRT
 win32:RC_FILE  = ./audiomove.rc
 mac:RC_FILE    = ./audiomove.icns
 
-win32:LIBS    += .\akrip\akrip32.lib $$SUBMODULESDIR\libsndfile\libsndfile-1.lib $$SUBMODULESDIR\libsamplerate\libsamplerate-0.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib
+win32:LIBS    += .\akrip\akrip32.lib $$SUBMODULESDIR\libsndfile\libsndfile-1.lib $$SUBMODULESDIR\libsamplerate\libsamplerate-0.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib psapi.lib
 unix:LIBS     += $$SUBMODULESDIR/libsamplerate/temp_install/lib/libsamplerate.a $$SUBMODULESDIR/libsndfile/temp_install/lib/libsndfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbis.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisenc.a $$SUBMODULESDIR/flac/temp_install/lib/libFLAC.a $$SUBMODULESDIR/ogg/temp_install/lib/libogg.a $$SUBMODULESDIR/opus/temp_install/lib/libopus.a
 mac:LIBS      += -lz -framework IOKit -framework Carbon -framework SystemConfiguration
 
@@ -29,11 +29,24 @@ TARGET      = AudioMove
 
 INCLUDEPATH = .. $$SUBMODULESDIR $$SUBMODULESDIR/muscle $$SUBMODULESDIR/libsndfile/temp_install/include $$SUBMODULESDIR/libsndfile/src $$SUBMODULESDIR/libsamplerate/temp_install/include
 
+# Enable this if you are cheating and using precompiled libsndfile and/or libamplerate on Win32
+win32:INCLUDEPATH += $$SUBMODULESDIR/libsamplerate/include $$SUBMODULESDIR/libsndfile/include
+
 OBJECTS_DIR = objects
+
+win32:INCLUDEPATH += $$SUBMODULESDIR/muscle/regex/regex $$SUBMODULESDIR/muscle/zlib/zlib/win32
 
 win32:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/compress.c                 \
                  $$SUBMODULESDIR/muscle/winsupport/Win32FileHandleDataIO.cpp \
-                 AKRipThread.cpp                       \
+                 $$SUBMODULESDIR/muscle/regex/regex/regcomp.c                \
+                 $$SUBMODULESDIR/muscle/regex/regex/regerror.c               \
+                 $$SUBMODULESDIR/muscle/regex/regex/regexec.c                \
+                 $$SUBMODULESDIR/muscle/regex/regex/regfree.c                \
+                 $$SUBMODULESDIR/muscle/zlib/zlib/gzclose.c                  \
+                 $$SUBMODULESDIR/muscle/zlib/zlib/gzlib.c                    \
+                 $$SUBMODULESDIR/muscle/zlib/zlib/gzread.c                   \
+                 $$SUBMODULESDIR/muscle/zlib/zlib/gzwrite.c                  \
+                 AKRipThread.cpp                                             \
                  Win32dirent.cpp
 
 !mac:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/adler32.c  \
