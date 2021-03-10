@@ -1,6 +1,6 @@
 AudioMove v1.22 3/9/2021
 by Jeremy Friesner (jaf@meyersound.com)
-Copyright 2004-2019 Meyer Sound Laboratories
+Copyright 2004-2021 Meyer Sound Laboratories
 Licensed under the GNU Public License
 See file COPYING.TXT for details.
 
@@ -11,7 +11,7 @@ This directory contains AudioMove, Meyer Sound's handy batch-mode file-conversio
 What can AudioMove do?
 ----------------------
 
-AudioMove can change the file's format from (any format that libsndfile can read) to WAV, AIFF, FLAC, or OGG format.
+AudioMove can change the file's format from (any format that libsndfile can read) to WAV, AIFF, FLAC, OGG, and several other formats.
 
 AudioMove can change the file's sampling rate from (any rate that libsndfile can read) to a number of output sampling rates, ranging from 8kHz to 192kHz.
 
@@ -24,10 +24,6 @@ How do I install AudioMove?
 ---------------------------
 
 Just drag the AudioMove folder to wherever you want to keep it.
-
-On Windows, you may need to run the included vcredist.exe file before AudioMove will run.
-(AudioMove for Windows was compiled with Microsoft Visual Studio Express 2008, and requires
-that their run-time libraries be installed)
 
 To run AudioMove, just double-click its icon.
 
@@ -56,7 +52,7 @@ Follow these steps:
 
 1) Launch AudioMove by double clicking its icon
 
-2) Choose your desired output settings from the combo boxes at the top of the window.  You may choose the output files' format (WAV, AIFF, FLAC, OGG, or "Same as Source File"), their sampling rate, and the quality of the sample-rate conversion ("Good", "Better", or "Best").  Higher quality sample rate conversion takes longer, but the result sounds slightly better.
+2) Choose your desired output settings from the combo boxes at the top of the window.  You may choose the output files' format (WAV, AIFF, FLAC, OGG, etc, or "Same as Source File"), their sampling rate, and the quality of the sample-rate conversion ("Good", "Better", or "Best").  Higher quality sample rate conversion takes longer, but the result sounds slightly better.
 
 3) Click the "Destination Folder" button and choose the folder that you want AudioMove to write its output files to.  Or if you prefer to do in-place conversions (where the output file replaces the input file) click the "Convert Files In-Place" checkbox.  (Warning:  be careful with in-place conversions, since your original input files will be replaced by the output files and won't be recoverable later if you change your mind!)
 
@@ -94,7 +90,7 @@ file       | Specify an input audio file to read.  This keyword may be specified
            |    or:  *.aiff *.wav congo.0.wav
            |
 format     | Specify the output file format.  Possible values are AIFF,
-destformat | WAV, FLAC, OGG, or Source.  e.g. destformat=AIFF
+destformat | WAV, FLAC, OGG, PAF, W64, CAF, RF64, OPUS, or Source.  e.g. destformat=AIFF
            |
 rate       | Specify the output files' sampling rate.  Possible values are
 destrate   | 8, 11, 12, 16, 22, 24, 44, 48, 88, 96, 176, 192, or Source.  e.g. destrate=44
