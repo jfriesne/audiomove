@@ -1,4 +1,4 @@
-AudioMove v1.22 9/10/2019
+AudioMove v1.22 3/9/2021
 by Jeremy Friesner (jaf@meyersound.com)
 Copyright 2004-2019 Meyer Sound Laboratories
 Licensed under the GNU Public License
@@ -145,14 +145,12 @@ NOTE:  To make use of the .lcsDisk file, you will need to have software that kno
 History
 -------
 
-v???? 2/7/2021 - Updated muscle submodule to the latest
-               - Updated error-handling the modern-muscle style
-               - Updated audio-handling submodules to the latest
-
-v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
-                   for easier development.
-                 - Updated the muscle submodule to the latest.
-                 - Updated the code to compile under either Qt 4.x or Qt 5.x.
+v1.22 3/9/2021   - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
+                   for easier development
+                 - Updated muscle submodule to v8.0
+                 - Updated error-handling the modern-muscle style
+                 - Updated audio-handling submodules to the latest versions
+                 - Updated the code to compile under either Qt 4.x or Qt 5.x
                  - Added .W64, .CAF, .RF64, and .OPUS as output-format options
                  - Added 8kHz, 12kHz, 16kHz, and 24kHz as output-rate options
                  - "Rate" combo box now turns red if set to a known-not-to-work setting
@@ -160,7 +158,6 @@ v1.22 9/10/2019  - Migrated the codebase to Github ( https://github.com/jfriesne
                  - "Width" combo box now turns red if set to a known-not-to-work setting
                    for the current Output Format (e.g. 32-bit Fixed for FLAC)
                  * 8-bit output-width now works as expected for all supported output formats.
-TODO:   Set SFC_SET_DITHER_ON_WRITE when writing to a smaller bit-depth!
 
 v1.21 5/19/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format
