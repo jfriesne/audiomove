@@ -31,9 +31,9 @@ To run AudioMove, just double-click its icon.
 How is AudioMove licensed?
 --------------------------
 
-AudioMove is licensed under the GNU Public License.  See the file COPYING for details.  (Note that the code in the muscle subdirectory is also available under the BSD license)
+AudioMove is licensed under the GNU Public License.  See the file COPYING for details.  (Note that the code in the muscle submodule is also available under the BSD license)
 
-AudioMove uses the following third party libraries under the terms of the GPL:
+AudioMove uses the following third-party libraries under the terms of the GPL:
 
 libnsdfile    - Source code to libsndfile can be downloaded at http://www.mega-nerd.com/libsndfile/#Download
 libsamplerate - Source code to libsamplerate can be downloaded at http://www.mega-nerd.com/SRC/download.html
@@ -41,8 +41,6 @@ libogg        - Source code to libogg can be downloaded at http://www.xiph.org/d
 libvorbis     - Source code to libvorbis can be downloaded at http://www.xiph.org/downloads/
 libFLAC       - Source code to libFLAC can be downloaded at http://flac.sourceforge.net/download.html
 AKRip.dll     - (Win32 build only) Source code to AKRip can be downloaded at http://akrip.sourceforge.net/
-
-Note that known-good source code archives of all of the libraries mentioned above are included in the AudioMove source code archive, so you don't have to download them all yourself if you odn't want to.
 
 
 How do I use AudioMove? 
