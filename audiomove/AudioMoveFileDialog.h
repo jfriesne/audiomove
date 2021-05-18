@@ -59,12 +59,12 @@ public:
    /** Adds the specified widget to the bottom of the dialog.
      * @param w The widget to add.  Should be a child of (this).
      */
-   void AddBottomWidget(QWidget * w, Alignment alignment = 0);
+   void AddBottomWidget(QWidget * w, Alignment alignment = Alignment());
 
    /** Adds the specified widget to the right-hand side of the dialog.
      * @param w The widget to add.  Should be a child of (this).
      */
-   void AddRightWidget(QWidget * w, Alignment alignment = 0);
+   void AddRightWidget(QWidget * w, Alignment alignment = Alignment());
 
    /** Sets the specified file (or file path) to be our sole current selection. */
    void SetSelection(const QString & filePath);

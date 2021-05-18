@@ -61,7 +61,7 @@ status_t ReadSettingsFile(const char * prefsPath, Message & settings)
       if (array.data())
       {
          ByteBuffer buf; buf.AdoptBuffer(array.size(), (uint8 *)array.data());
-         ByteBufferRef bufRef(&buf, false);
+         DummyByteBufferRef bufRef(buf);
 
 #ifdef MUSCLE_ENABLE_ZLIB_ENCODING
          ZLibCodec inflater;

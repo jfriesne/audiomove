@@ -77,7 +77,12 @@ signals:
 protected:
    virtual void done(int r);
 
+private slots:
+   void HandleDoneAux(int r);
+
 private:
+   void EnableHackFixForFogBugz15263();
+
    bool _autoDelete;
    bool _signalEmitted;
    int _objectType;

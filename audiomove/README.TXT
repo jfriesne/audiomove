@@ -1,4 +1,4 @@
-AudioMove v1.21b2 5/15/2016
+AudioMove v1.22 5/15/2016
 by Jeremy Friesner (jaf@meyersound.com)
 Copyright 2004-2009 Meyer Sound Laboratories
 Licensed under the GNU Public License
@@ -145,7 +145,11 @@ NOTE:  To make use of the .lcsDisk file, you will need to have software that kno
 History
 -------
 
-v1.21b2 5/15/2016  - Upgraded the included libraries to more recent versions
+v1.23 - Updated muscle submodule to the latest
+      - Fixed a Qt-related problem that prevented the "are you sure you want to
+        enable Convert-in-Place" dialog from being handled properly when the user clicked "No".
+
+v1.22 5/15/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format
                  - Added a "disable_bwf" command line argument, in case you need to
                    disable the reading and writing of Broadcast WAV format information

@@ -189,7 +189,7 @@ Q_OBJECT
 
 public:
    /** Standard constructor; all parameters are passed through to the QMainWindow ctor. **/
-   AudioMoveWindow(const Message & args, QWidget * parent = NULL, WindowFlags f = 0);
+   AudioMoveWindow(const Message & args, QWidget * parent = NULL, WindowFlags f = WindowFlags());
 
    /** Standard destructor */
    virtual ~AudioMoveWindow();

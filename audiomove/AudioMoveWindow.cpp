@@ -420,7 +420,6 @@ void AudioMoveItem :: SetStatus(uint32 s)
 
 QColor AudioMoveItem :: GetColorForStatus(uint32 status) const
 {
-   QColor color;
    switch(status)
    {
       case MOVE_STATUS_CONFIRMING: return QColor(100,255,255);
@@ -1893,7 +1892,7 @@ status_t AudioMoveWindow :: MessageReceivedFromUpstream(const MessageRef & msg)
 
 bool AudioMoveWindow :: event(QEvent * evt)
 {
-   switch(evt->type())
+   switch((uint32) evt->type())
    {
       case BUFFER_RETURNED_EVENT_TYPE:
       {
