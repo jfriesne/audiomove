@@ -1,8 +1,13 @@
 The author of the AudioMove and MUSCLE code in this
 archive is Jeremy Friesner <jaf@meyersound.com>.
 
-The main author of libsamplerate and libsndfile is 
-Erik de Castro Lopo <erikd@mega-nerd.com>.
+Qt is written by the Qt Company.
+It is used under the terms of the GPL.
 
-The author of the AKRip CD-audio reading library
-is Andy Key <scsiprog@users.sourceforge.com>
+The main author of libsamplerate and libsndfile is 
+Erik de Castro Lopo <erikd@mega-nerd.com>.  These
+libraries are used under the terms of the GPL.
+
+The main author of the AKRip32 audio ripping library
+is Andy Key.  That library is used under the terms
+of the GPL.
