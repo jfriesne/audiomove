@@ -1,6 +1,6 @@
-AudioMove v1.22 5/15/2016
+AudioMove v1.23 5/28/2021
 by Jeremy Friesner (jaf@meyersound.com)
-Copyright 2004-2009 Meyer Sound Laboratories
+Copyright 2004-2021 Meyer Sound Laboratories
 Licensed under the GNU Public License
 See file COPYING.TXT for details.
 
@@ -25,10 +25,6 @@ How do I install AudioMove?
 
 Just drag the AudioMove folder to wherever you want to keep it.
 
-On Windows, you may need to run the included vcredist.exe file before AudioMove will run.
-(AudioMove for Windows was compiled with Microsoft Visual Studio Express 2008, and requires
-that their run-time libraries be installed)
-
 To run AudioMove, just double-click its icon.
 
 
@@ -49,7 +45,7 @@ AKRip.dll     - (Win32 build only) Source code to AKRip can be downloaded at htt
 Note that known-good source code archives of all of the libraries mentioned above are included in the AudioMove source code archive, so you don't have to download them all yourself if you odn't want to.
 
 
-How do I use AudioMove? 
+How do I use AudioMove?
 -----------------------
 
 Follow these steps:
@@ -84,12 +80,12 @@ dir        | Specify the directory that AudioMove should write
 dest       | its output audio files into.  This directory should already exist.
 destdir    |   e.g. dir=/Users/jeremy/MyConvertedAudioFiles
            |
-file       | Specify an input audio file to read.  This keyword may be specified 
+file       | Specify an input audio file to read.  This keyword may be specified
            | multiple times if you wish to convert multiple files.  Also, any
            | command line arguments that you specify that don't have an equal sign
            | in them are assumed to be file names.  (Note that if you want to use
            | wild card expansions, you must omit the file= prefix)
-           | 
+           |
            |    e.g. file=/Users/jeremy/src/File1.aiff file=File2.aiff
            |    or:  *.aiff *.wav congo.0.wav
            |
@@ -113,7 +109,7 @@ paused     | In this mode, conversions will not start until you uncheck the
 threads    | Specifies how many simultaneous processing threads AudioMove may
 maxthreads | launch.  Available values range from 1 to 9.   e.g. threads=5
            |
-split      | If specified, stereo and multitrack input files will be converted 
+split      | If specified, stereo and multitrack input files will be converted
 splitfiles | into multiple mono files.
            |
 inplace    | If specified, destdir will be ignored and all file conversions will
@@ -137,12 +133,13 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 History
 -------
 
-v1.23 - Updated all the submodules to their latest/current versions
-      - Fixed a Qt-related problem that prevented the "are you sure you want to
-        enable Convert-in-Place" dialog from being handled properly when the user clicked "No".
-      - Fixed a bug that caused the original file to be deleted when splitting a file into
-        its own directory.
-      - Removed the "Create Virtual Drive File" feature as it's no longer necessary.
+v1.23 5/28/2021  - Updated all the submodules to the latest/current versions
+                 - Fixed a Qt-related problem that prevented the "are you sure you want
+                   to enable Convert-in-Place" dialog from being handled properly when
+                   the user clicked "No".
+                 - Fixed a bug that caused the original file to be deleted when
+                   splitting a file into its own directory.
+                 - Removed the obsolete "Create Virtual Drive File" feature.
 
 v1.22 5/15/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format
@@ -150,6 +147,7 @@ v1.22 5/15/2016  - Upgraded the included libraries to more recent versions
                    disable the reading and writing of Broadcast WAV format information
                    for some reason.  This flag can also be enabled by renaming the
                    AudioMove executable to include the substring disable_bwf in its name.
+                 - Updated the code to compile against Qt 5.x.
 
 v1.20 3/5/2009   - Added support for reading and writing FLAC and OGG file types.
                  - The Win32 build of AudioMove can now read .cda files directly
@@ -165,7 +163,7 @@ v1.20 3/5/2009   - Added support for reading and writing FLAC and OGG file types
                    more automatic under MacOS/X and Linux.  (The Windows build doesn't
                    have a build script, so you still have to assemble everything
                    manually.  It's probably best just to use the Windows AudioMove.exe
-                   binary instead, and leave that pain to me) 
+                   binary instead, and leave that pain to me)
                  o Update AudioMove code to compile against (and require) Qt4.5.x.
                  * Fixed a bug where convert-in-place mode would try to replace
                    unusual filename extensions with their more usual ones, and
@@ -195,11 +193,11 @@ v1.15 6/6/2007   - Added a "Split Stereo Files" checkbox.  When checked,
                  * File names with foreign characters are now handled
                    correctly.
                  * AudioMove now preserves the EBU broadcast chunk (BEXT)
-                   of broadcast WAV files when processing them back into 
+                   of broadcast WAV files when processing them back into
                    WAV format.
                  * AudioMove now does the right thing when the input file
                    and the output file are the same file (before it could
-                   end up munging the file in that case) 
+                   end up munging the file in that case)
                  * Fixed a bug that caused conversions of audio file
                    conversions to fail when the input file had a channel
                    count that was not a power of two.
@@ -210,8 +208,8 @@ v1.14 6/2/2006   - Added a recently-selected-files list and customizable
                  - Renamed the items in the "Width" combo box to be more
                    explicit about the sample formats they describe.
                  - Updated the included muscle distribution to v3.21.
-                  
-v1.13 4/28/2006  - Updated the included libsndfile distribution 
+
+v1.13 4/28/2006  - Updated the included libsndfile distribution
                    to v1.0.16pre2.
                  * AudioMove 1.12 was outputting WAV files in WAV/RIFX
                    (big endian) format.  This was problematic because
@@ -226,18 +224,18 @@ v1.12 3/25/2006  - The background color of the items being processed now
                  - Updated the included muscle install to version 3.20.
                  - Updated the included libsamplerate install to version 0.1.2.
                  * AudioMove now detects clipping in the output file and
-                   renormalizes the output file (if necessary) to avoid it.  
-                   (see the first question in the libsamplerate FAQ for 
+                   renormalizes the output file (if necessary) to avoid it.
+                   (see the first question in the libsamplerate FAQ for
                    details:  http://www.mega-nerd.com/SRC/faq.html#Q001 )
                  * Fixed a bug that would cause AudioMove to crash if you
                    quit AudioMove while file-conversions were ongoing.
 
 v1.11 3/15/2006  - The "Destination" widget now turns pink whenever the
                    destination path is not a valid directory.  The widget
-                   is updated whenever its contents change, and also every 5 
+                   is updated whenever its contents change, and also every 5
                    seconds (in case the file system changes).
                  * If the folder listed in the "Destination" widget does not
-                   exist, all transfers will immediately fail.  In previous 
+                   exist, all transfers will immediately fail.  In previous
                    versions, the destination folder would be automatically created
                    in this case, but that turned out to be problematic because
                    if the destination referred to a mount-point which was not
@@ -245,12 +243,12 @@ v1.11 3/15/2006  - The "Destination" widget now turns pink whenever the
                    mount-point's previous location.
 
 v1.10 7/5/2005   - Added 16x16 window icon bitmap
-                 - Updated the included libsndfile archive to 1.0.12pre7, 
+                 - Updated the included libsndfile archive to 1.0.12pre7,
                    primarily to add support for reading Sound Designer II format
                  - Updated the included muscle archive to v3.00.
                  - Added a "Create .lcsDisk" button that causes AudioMove to
                    scan the output directory and create a .lcsDisk file that
-                   represents that directory.  This feature is useful only for 
+                   represents that directory.  This feature is useful only for
                    people who also use LCS's VirtualLX and Wild Tracks products.
                  o Removed support for obsolete LCS audio format.
                  o Changed the default "Simultaneous Threads" value to 1.
@@ -286,10 +284,10 @@ v1.03  7/30/2004 - Added "Quality" combo box to the GUI, for choosing conversion
                  * Made the GUI somewhat more space efficient.
 
 v1.02  7/28/2004 - Added command-line argument parsing (see above for details)
-                 * Fixed the bug that was causing silence gaps in the output of 
+                 * Fixed the bug that was causing silence gaps in the output of
                    sample-rate-converted stereo files.
 
-v1.01  7/19/2004 - Initial setup of files is now done in a separate thread, so that 
+v1.01  7/19/2004 - Initial setup of files is now done in a separate thread, so that
                    the GUI doesn't freeze up after dragging in a lot of files.
                  - Only the active processes keep file handles open now.
                  - Other minor GUI tweaks and enhancements.
