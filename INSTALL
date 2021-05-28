@@ -2,11 +2,9 @@ Basic Installation
 ==================
 
 These are generic build instructions.  AudioMove should be
-buildable under any OS that has a valid Qt 4.5.x development
-or Qt 5.x environment present.
+buildable under any OS that has a valid Qt 5.x development environment.
 
-1) Make sure you have a Qt build environment set up on your machine.
-   You'll need at least Qt 4.5.x, but Qt 5.x is preferred.
+1) Make sure you have a Qt5 build environment set up on your machine.
 
 2) If you downloaded this folder from GitHub (e.g. via a "git clone"
    command), be sure to do a

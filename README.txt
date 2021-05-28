@@ -1,8 +1,8 @@
-AudioMove v1.22 3/9/2021
+AudioMove v1.23 5/28/2021
 by Jeremy Friesner (jaf@meyersound.com)
 Copyright 2004-2021 Meyer Sound Laboratories
 Licensed under the GNU Public License
-See file COPYING.TXT for details.
+See file LICENSE for details.
 
 
 This directory contains AudioMove, Meyer Sound's handy batch-mode file-conversion utility.  You can use this utility to quickly copy files from one location to another, and optionally convert their format as part of the copy.
@@ -128,16 +128,16 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 ./AudioMove.app/Contents/MacOS/AudioMove /Users/jeremyfriesner/wtrxaudio/congo.0.wav /Users/jeremyfriesner/wtrxaudio/*.aiff dest=/Users/jeremyfriesner format=AIFF rate=48 width=float quit=yes
 
 
-What does the "Create Virtual Drive File" button do?
-====================================================
-
-It iterates recursively over all the audio files in the current Destination Folder, extracting metadata (currently, the file name, file length, and number of tracks in the file) from each audio file.  The metadata is saved into a compressed ".lcsDisk" file that can then later be used as a dummy substitute for the actual files, when working in an environment where the actual files are not available.
-
-NOTE:  To make use of the .lcsDisk file, you will need to have software that knows how to read it.  As of this writing, the only programs that knows how to read .lcsDisk files are Meyer Sound's CueStation and VirtualLX programs -- so if you aren't a Meyer Sound customer, this feature probably won't be very useful to you.
-
- 
 History
 -------
+
+v1.23 5/28/2021  - Updated all the submodules to the latest/current versions
+                 - Fixed a Qt-related problem that prevented the "are you sure you want
+                   to enable Convert-in-Place" dialog from being handled properly when
+                   the user clicked "No".
+                 - Fixed a bug that caused the original file to be deleted when
+                   splitting a file into its own directory.
+                 - Removed the obsolete "Create Virtual Drive File" feature.
 
 v1.22 3/9/2021   - Migrated the codebase to Github ( https://github.com/jfriesne/audiomove )
                    for easier development
