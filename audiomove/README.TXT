@@ -134,14 +134,6 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 ./AudioMove.app/Contents/MacOS/AudioMove /Users/jeremyfriesner/wtrxaudio/congo.0.wav /Users/jeremyfriesner/wtrxaudio/*.aiff dest=/Users/jeremyfriesner format=AIFF rate=48 width=float quit=yes
 
 
-What does the "Create Virtual Drive File" button do?
-====================================================
-
-It iterates recursively over all the audio files in the current Destination Folder, extracting metadata (currently, the file name, file length, and number of tracks in the file) from each audio file.  The metadata is saved into a compressed ".lcsDisk" file that can then later be used as a dummy substitute for the actual files, when working in an environment where the actual files are not available.
-
-NOTE:  To make use of the .lcsDisk file, you will need to have software that knows how to read it.  As of this writing, the only programs that knows how to read .lcsDisk files are Meyer Sound's CueStation and VirtualLX programs -- so if you aren't a Meyer Sound customer, this feature probably won't be very useful to you.
-
- 
 History
 -------
 
@@ -150,6 +142,7 @@ v1.23 - Updated all the submodules to their latest/current versions
         enable Convert-in-Place" dialog from being handled properly when the user clicked "No".
       - Fixed a bug that caused the original file to be deleted when splitting a file into
         its own directory.
+      - Removed the "Create Virtual Drive File" feature as it's no longer necessary.
 
 v1.22 5/15/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format

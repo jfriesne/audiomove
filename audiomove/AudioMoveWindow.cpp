@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2004 Level Control Systems <jaf@lcsaudio.com>
+** Copyright (C) 2021 Level Control Systems <jaf@meyersound.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -50,7 +50,6 @@
 #include "audiomove/AudioMovePopupMenu.h"
 #include "audiomove/AudioMoveWindow.h"
 #include "audiomove/AudioMoveFileDialog.h"
-#include "audiomove/CreateLCSDisk.h"
 #include "audiomove/ErrorIOThread.h"
 #include "audiomove/LibSndFileIOThread.h"
 #include "audiomove/SampleRateThread.h"
@@ -919,8 +918,6 @@ void AudioMoveTreeWidget :: resizeEvent(QResizeEvent * e)
    update();
 }
 
-#define DEFAULT_LCSDISK_NAME "wtrx-1-scsi-1.lcsDisk"
-
 AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, WindowFlags f) 
    : QMainWindow(parent, f)
    , _chooseDestDir(NULL)
@@ -929,8 +926,6 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
    , _quitOnIdle(false)
    , _forceQuit(false)
    , _numInitializing(0)
-   , _createLCSDisk(NULL)
-   , _lcsDiskFile(LocalToQ(DEFAULT_LCSDISK_NAME))
    , _tagCounter(0)
    , _confirmationDialog(NULL)
    , _audioSetupThread(NULL)
@@ -996,8 +991,6 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
                   connect(_outputFolderPath, SIGNAL(editingFinished()), this, SLOT(UpdateDestinationPathStatus()));
                   destLayout->addWidget(_outputFolderPath, 10);
 
-                  _createLCSDiskButton = AddButton(tr("&Create Virtual Drive File"), SLOT(ShowCreateLCSDiskDialog()), destWidgets, destLayout);
-
                   _confirmOverwrites = new QCheckBox(tr("Confirm &Overwrites"), destWidgets);
                   connect(_confirmOverwrites, SIGNAL(stateChanged(int)), this, SLOT(UpdateConfirmationState()));
                   destLayout->addWidget(_confirmOverwrites);
@@ -1058,7 +1051,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
    // load initial settings
    {
       String dest  = LocalFromQ(QDir::home().absolutePath());
-      String addFilesDir, lcsDiskFile;
+      String addFilesDir;
       int32 format = AUDIO_FORMAT_SOURCE;
       int32 rate   = AUDIO_RATE_48000;
       int32 width  = AUDIO_WIDTH_FLOAT;
@@ -1081,7 +1074,6 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          (void) settingsMsg.FindBool("amw_ipc",      &ipc);
          (void) settingsMsg.FindBool("amw_cow",      &confirm);
          if (settingsMsg.FindString("amw_afd", addFilesDir).IsOK()) _addFilesDir = LocalToQ(addFilesDir());
-         if (settingsMsg.FindString("amw_lcf", lcsDiskFile).IsOK()) _lcsDiskFile = LocalToQ(lcsDiskFile());
          (void) RestoreWindowPositionFromArchive(this, settingsMsg);
       }
 
@@ -1224,7 +1216,6 @@ AudioMoveWindow :: ~AudioMoveWindow()
    settingsMsg.AddInt32("amw_maxp",    GetMaxProcesses());
    settingsMsg.AddBool("amw_split",    GetSplitMultiTrackFiles());
    settingsMsg.AddString("amw_afd",    LocalFromQ(_addFilesDir));
-   settingsMsg.AddString("amw_lcf",    LocalFromQ(_lcsDiskFile));
    settingsMsg.AddBool("amw_ipc",      GetInPlaceConversions());
    settingsMsg.AddBool("amw_cow",      GetConfirmOverwrites());
 
@@ -1732,59 +1723,6 @@ void AudioMoveWindow :: DequeueTransfers()
             break;
          }
       }
-   }
-}
-
-void AudioMoveWindow :: ShowCreateLCSDiskDialog()
-{
-   String dest = GetDestination();
-   while((dest.EndsWith("/"))||(dest.EndsWith("\\"))) dest = dest.Substring(0, dest.Length()-1);
-   if ((dest.EndsWith("wtrxaudio"))||(QMessageBox::warning(this, tr("Virtual Drive File Creation Warning"), tr("Virtual Drive (.lcsDisk) files are typically created from directories named wtrxaudio,\nso that Wild Tracks relative file paths will be computed correctly.\n\nYou have requested to make a .lcsDisk file by scanning the directory\n\n%1\n\nAre you sure you want to do that?").arg(ToQ(dest())), QMessageBox::Yes, QMessageBox::Cancel|QMessageBox::Escape) == QMessageBox::Yes))
-   {
-      if (_createLCSDisk == NULL) 
-      {
-         _createLCSDisk = new AudioMoveFileDialog("diskfiles", LocalToQ("LCS Disk Files (*.lcsDisk)"), QFileDialog::AnyFile, this);
-         _createLCSDisk->setAcceptMode(QFileDialog::AcceptSave);
-         connect(_createLCSDisk, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(CreateLCSDisk(const QStringList &)));
-      }
-
-      QString defName = _lcsDiskFile;
-      {
-         String d = FromQ(defName);
-         if (d.Substring("/").StartsWith("wtrx-") == false)
-         {
-            int32 lastSlash = d.LastIndexOf('/');
-
-            // We want to strongly encourage file names of the form wtrx-X-scsi-Y.lcsDisk, because
-            // those are the only names that the daemons will try to read.  So if the user doesn't
-            // have such a name already, we'll replace it with the default file name.
-            if (lastSlash >= 0) defName = LocalToQ((d.Substring(0, lastSlash+1) + DEFAULT_LCSDISK_NAME)());
-                           else defName = LocalToQ(DEFAULT_LCSDISK_NAME);
-         }
-      }
-      
-      _createLCSDisk->selectFile(defName);
-      _createLCSDisk->show();
-   }
-}
-
-void AudioMoveWindow :: ReshowLCSDiskDialog()
-{
-   if (_createLCSDisk) _createLCSDisk->show();
-}
-
-void AudioMoveWindow :: CreateLCSDisk(const QStringList & f)
-{
-   if (f.size() > 0)
-   {
-      QString fileName(f[0]);
-
-      const QString extension = LocalToQ(".lcsDisk");
-      if (fileName.endsWith(extension) == false) fileName += extension;
-
-      _lcsDiskFile = fileName;
-      if (_createLCSDisk) _createLCSDisk->hide();
-      if (CreateVDiskFile(GetDestination()(), LocalFromQ(_lcsDiskFile), this).IsError()) QMessageBox::critical(this, tr(".lcsDisk File Save Error"), tr("There was an error saving file\n\n%1\n\nto disk.").arg(_lcsDiskFile));
    }
 }
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2004 Level Control Systems <jaf@lcsaudio.com>
+** Copyright (C) 2021 Level Control Systems <jaf@meyersound.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -46,8 +46,8 @@ status_t ReadSettingsFile(const char * prefsPath, Message & settings);
   */
 status_t WriteSettingsFile(const char * prefsPath, const Message & settings, int compressionLevel);
 
-/** Returns the specified subfolder underneath the LCS_Settings folder.
- *  @param subFolderName name of the subfolder to return, or "" or null if you want the LCS_Settings folder itself.
+/** Returns the specified subfolder underneath the AudioMove_Settings folder.
+ *  @param subFolderName name of the subfolder to return, or "" or null if you want the AudioMove_Settings folder itself.
  *  @param createIfNecessary Whether or not we should create folders if they don't currently exist.
  *  @returns a QDir object representing the desired directory, or a non-existant QDir object on failure.
  */

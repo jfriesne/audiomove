@@ -20,7 +20,7 @@ namespace audiomove {
 
 class _HackTreeWidget;
 
-/** This class contains LCS-specific GUI enhancements in it.  
+/** This class contains AudioMove-specific GUI enhancements to the Qt QFileDialog class.
   * AudioMove code should always use this class instead of the regular QFileDialog class.
   */
 class AudioMoveFileDialog : public QFileDialog

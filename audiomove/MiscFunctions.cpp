@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2004 Level Control Systems <jaf@lcsaudio.com>
+** Copyright (C) 2021 Level Control Systems <jaf@meyersound.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ QDir GetSettingsFolder(const QString & subFolderName, bool createIfNecessary)
 }
 
 static const char * REGISTRY_FILE_PREFIX = "key_";
-static const char * REGISTRY_DIR_NAME    = "LCS_Registry";
+static const char * REGISTRY_DIR_NAME    = "AudioMove_Registry";
 
 status_t SaveMessageToRegistry(const char * subkey, const Message & msg)
 {

@@ -20,7 +20,6 @@ DEFINES    += QT_NO_CAST_ASCII MUSCLE_ENABLE_ZLIB_ENCODING
 MOC_DIR     = moc
 
 HEADERS     = AudioMoveWindow.h       \
-              CreateLCSDisk.h         \
               AudioMoveFileDialog.h   \ 
               AudioMovePopupMenu.h    \
               AudioMoveMessageBox.h
@@ -61,7 +60,6 @@ win32:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/compress.c                 \
 SOURCES    += audiomove.cpp           \
               AudioMoveWindow.cpp     \
               AudioMoveThread.cpp     \
-              CreateLCSDisk.cpp       \
               LibSndFileIOThread.cpp  \
               MiscFunctions.cpp       \
               AudioMoveFileDialog.cpp \

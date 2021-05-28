@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2004 Level Control Systems <jaf@lcsaudio.com>
+** Copyright (C) 2021 Level Control Systems <jaf@meyersound.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -217,9 +217,6 @@ private slots:
    void UpdateButtons();
    void UpdateButtonsAsync() {QTimer::singleShot(0, this, SLOT(UpdateButtons()));}
    void MaxSimultaneousChanged();
-   void ShowCreateLCSDiskDialog();
-   void CreateLCSDisk(const QStringList &);
-   void ReshowLCSDiskDialog();
    void UpdateDestinationPathStatus();
    void DestinationDirSelected(const QStringList &);
    void ConvertInPlaceToggled();
@@ -319,10 +316,6 @@ private:
    bool _quitOnIdle;
    bool _forceQuit;
    uint32 _numInitializing;
-
-   QAbstractButton * _createLCSDiskButton;
-   AudioMoveFileDialog * _createLCSDisk;
-   QString _lcsDiskFile;
 
    uint32 _tagCounter;
    Hashtable<uint32, AudioMoveItem *> _moveItems;
