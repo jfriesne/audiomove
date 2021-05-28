@@ -20,7 +20,6 @@
 #include <QPainter>
 #include <QCheckBox>
 #include <QComboBox>
-#include <QFrame>
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QLabel>
@@ -119,6 +118,7 @@ enum {
 #define SETUP_NAME_QUALITY          "qual"
 #define SETUP_NAME_ERROR            "errr"
 #define SETUP_NAME_SPLITFILES       "split"
+#define SETUP_NAME_CONVERTINPLACE   "cip"
 #define SETUP_NAME_FILESTOBEOVERWRITTEN "ftbo"
 
 static bool ParseBool(const String & text, bool defVal)
@@ -157,29 +157,32 @@ protected:
          (void) msg->FindString(SETUP_NAME_DESTDIR, destDir);   // if not found, do an in-place conversion (FogBugz #3398)
 
          uint32 targetFormat, targetRate, targetWidth, quality;
-         bool splitFiles;
-         if ((msg->FindString(SETUP_NAME_SOURCEFILE, sourceFile)             .IsOK())&&
-             (msg->FindInt32(SETUP_NAME_TARGETFORMAT, (int32*) &targetFormat).IsOK())&&
-             (msg->FindInt32(SETUP_NAME_TARGETRATE,   (int32*) &targetRate)  .IsOK())&&
-             (msg->FindInt32(SETUP_NAME_TARGETWIDTH,  (int32*) &targetWidth) .IsOK())&&
-             (msg->FindInt32(SETUP_NAME_QUALITY,      (int32*) &quality)     .IsOK())&&
-             (msg->FindBool(SETUP_NAME_SPLITFILES,   &splitFiles)            .IsOK())) DoSetup(destDir, sourceFile, destDir, targetFormat, targetRate, targetWidth, quality, splitFiles);
+         bool splitFiles, convertInPlace;
+         if ((msg->FindString(SETUP_NAME_SOURCEFILE,   sourceFile)            .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETFORMAT,  (int32*) &targetFormat).IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETRATE,    (int32*) &targetRate)  .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_TARGETWIDTH,   (int32*) &targetWidth) .IsOK())&&
+             (msg->FindInt32(SETUP_NAME_QUALITY,       (int32*) &quality)     .IsOK())&&
+             (msg->FindBool(SETUP_NAME_SPLITFILES,     splitFiles)            .IsOK())&&
+             (msg->FindBool(SETUP_NAME_CONVERTINPLACE, convertInPlace)        .IsOK()))
+                DoSetup(destDir, sourceFile, destDir, targetFormat, targetRate, targetWidth, quality, splitFiles, convertInPlace);
+
          return B_NO_ERROR;
       }
       else return Thread::MessageReceivedFromOwner(msgRef, numLeft);
    }
 
-   void DoSetup(const String & origDestDir, const String & sourceFile, const String & destDir, uint32 targetFormat, uint32 targetSampleRate, uint32 targetSampleWidth, uint32 quality, bool splitFiles)
+   void DoSetup(const String & origDestDir, const String & sourceFile, const String & destDir, uint32 targetFormat, uint32 targetSampleRate, uint32 targetSampleWidth, uint32 quality, bool splitFiles, bool convertInPlace)
    {
       MessageRef ret = GetMessageFromPool(SETUP_REPLY_RESULTS);
       if (ret())
       {
-         DoSetupAux(origDestDir, *ret(), sourceFile, destDir, targetFormat, targetSampleRate, targetSampleWidth, quality, splitFiles);
+         DoSetupAux(origDestDir, *ret(), sourceFile, destDir, targetFormat, targetSampleRate, targetSampleWidth, quality, splitFiles, convertInPlace);
          QApplication::postEvent(_window, new BufferReturnedEvent(ret, true));
       }
    }
 
-   void DoSetupAux(const String & origDestDir, Message & addMsgTo, const String & sourceFile, const String & destDir, uint32 targetFormat, uint32 targetSampleRate, uint32 targetSampleWidth, uint32 quality, bool splitFiles)
+   void DoSetupAux(const String & origDestDir, Message & addMsgTo, const String & sourceFile, const String & destDir, uint32 targetFormat, uint32 targetSampleRate, uint32 targetSampleWidth, uint32 quality, bool splitFiles, bool convertInPlace)
    {
       // First see if the sourceFile is really a directory.  If so, then we will recurse to its contents
       DIR * dir = opendir(sourceFile());
@@ -190,7 +193,7 @@ protected:
          while((de = readdir(dir)) != NULL)
          {
             const char * n = de->d_name;
-            if (n[0] != '.') DoSetupAux(origDestDir, addMsgTo, AddPath(sourceFile, n), newDestDir, targetFormat, targetSampleRate, targetSampleWidth, quality, splitFiles);
+            if (n[0] != '.') DoSetupAux(origDestDir, addMsgTo, AddPath(sourceFile, n), newDestDir, targetFormat, targetSampleRate, targetSampleWidth, quality, splitFiles, convertInPlace);
          }
          closedir(dir);
       }
@@ -305,7 +308,7 @@ protected:
                         }
                      }
 
-                     outputThread.SetRef(new LibSndFileIOThread(odd, destFile, (sourceFile==destFile)?sourceFile:"", targetFormat, targetSampleWidth, targetSampleRate, inputThreadRef()->GetFileStreams(), splitFiles, biValid?&bi:NULL));
+                     outputThread.SetRef(new LibSndFileIOThread(odd, destFile, (((splitFiles==false)||(convertInPlace))&&(sourceFile==destFile))?sourceFile:"", targetFormat, targetSampleWidth, targetSampleRate, inputThreadRef()->GetFileStreams(), splitFiles, biValid?&bi:NULL));
                      if ((outputThread())&&(origDestDir.HasChars())) (void) outputThread()->GetFilesThatWillBeOverwritten(*subMsg(), SETUP_NAME_FILESTOBEOVERWRITTEN);
                   }
                   break;
@@ -939,9 +942,9 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
 
    QBoxLayout * mainLayout = NewVBoxLayout(cw, 3);
    {
-      QFrame * settingsGroup = new QFrame(cw);
+      QWidget * settingsGroup = new QWidget(cw);
       {
-         QBoxLayout * settingsGroupLayout = NewVBoxLayout(settingsGroup, 3);
+         QBoxLayout * settingsGroupLayout = NewVBoxLayout(settingsGroup);
 
          QWidget * lineOne = new QWidget(settingsGroup);
          {
@@ -1027,7 +1030,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
       connect(_processList->horizontalScrollBar(), SIGNAL(valueChanged(int)), _processList->viewport(), SLOT(update()));
       mainLayout->addWidget(_processList, 10);
 
-      QFrame * buttonsGroup = new QFrame(cw);
+      QWidget * buttonsGroup = new QWidget(cw);
       {
          QBoxLayout * buttonsLayout = NewHBoxLayout(buttonsGroup, 3, 3);
 
@@ -1688,7 +1691,8 @@ void AudioMoveWindow :: AddFile(const QString & qqfn)
        (setupMsg()->AddInt32(SETUP_NAME_TARGETRATE, GetTargetSampleRate())     .IsOK())&&
        (setupMsg()->AddInt32(SETUP_NAME_TARGETWIDTH, GetTargetSampleWidth())   .IsOK())&&
        (setupMsg()->AddInt32(SETUP_NAME_QUALITY, GetConversionQuality())       .IsOK())&&
-       (setupMsg()->AddBool(SETUP_NAME_SPLITFILES, GetSplitMultiTrackFiles())  .IsOK()))
+       (setupMsg()->AddBool(SETUP_NAME_SPLITFILES, GetSplitMultiTrackFiles())  .IsOK())&&
+       (setupMsg()->AddBool(SETUP_NAME_CONVERTINPLACE, GetInPlaceConversions()).IsOK()))
    {
       // demand-allocate the setup thread
       if (_audioSetupThread == NULL)

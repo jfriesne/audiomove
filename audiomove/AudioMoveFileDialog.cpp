@@ -753,7 +753,7 @@ void AudioMoveFileDialog :: RecentFileActivated(QTreeWidgetItem * item, int colu
 class RecentFileTreeWidgetItem : public QTreeWidgetItem
 {
 public:
-   RecentFileTreeWidgetItem(QTreeWidget * lv, const QString & displayStr, const QKeySequence & ks, bool isReadable) : QTreeWidgetItem(lv), _isReadable(isReadable) 
+   RecentFileTreeWidgetItem(QTreeWidget * lv, const QString & displayStr, const QKeySequence & ks, bool isReadable) : QTreeWidgetItem(lv)
    {
       static QIcon _ejectIcon(QPixmap((const char **) eject_xpm));
       static bool _firstTime = true;
@@ -765,10 +765,9 @@ public:
       setText(RECENT_FILE_COLUMN_FILENAME, displayStr);
       setText(RECENT_FILE_COLUMN_HOTKEY, ks.toString());
       setIcon(RECENT_FILE_COLUMN_DELETE, _ejectIcon);
-   }
 
-private:
-   bool _isReadable;
+      if (isReadable == false) for (uint32 i=0; i<NUM_RECENT_FILE_COLUMNS; i++) setForeground(i, Qt::gray);
+   }
 };
 
 void AudioMoveFileDialog :: UpdateRecentFilesTreeWidget()

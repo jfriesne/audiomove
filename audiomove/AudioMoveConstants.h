@@ -23,7 +23,7 @@
 
 namespace audiomove {
 
-#define VERSION_STRING "1.22"
+#define VERSION_STRING "1.23"
 
 enum {
    AUDIO_FORMAT_SOURCE = 0,  // use same format as source file

@@ -145,9 +145,11 @@ NOTE:  To make use of the .lcsDisk file, you will need to have software that kno
 History
 -------
 
-v1.23 - Updated muscle submodule to the latest
+v1.23 - Updated all the submodules to their latest/current versions
       - Fixed a Qt-related problem that prevented the "are you sure you want to
         enable Convert-in-Place" dialog from being handled properly when the user clicked "No".
+      - Fixed a bug that caused the original file to be deleted when splitting a file into
+        its own directory.
 
 v1.22 5/15/2016  - Upgraded the included libraries to more recent versions
                  - Added support for little-endian and big-endian PAF output format
