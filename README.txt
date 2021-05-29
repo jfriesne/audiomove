@@ -131,6 +131,8 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 History
 -------
 
+                 - Fixed a bug that caused destination folders with spaces in the path to not be usable.
+
 v1.23 5/28/2021  - Updated all the submodules to the latest/current versions
                  - Fixed a Qt-related problem that prevented the "are you sure you want
                    to enable Convert-in-Place" dialog from being handled properly when
