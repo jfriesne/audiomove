@@ -935,15 +935,15 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
    QWidget * cw = new QWidget(this);
    setCentralWidget(cw);
 
-   QBoxLayout * mainLayout = NewVBoxLayout(cw, 3);
+   QBoxLayout * mainLayout = NewVBoxLayout(cw, 5);
    {
       QWidget * settingsGroup = new QWidget(cw);
       {
-         QBoxLayout * settingsGroupLayout = NewVBoxLayout(settingsGroup);
+         QBoxLayout * settingsGroupLayout = NewVBoxLayout(settingsGroup, 5);
 
          QWidget * lineOne = new QWidget(settingsGroup);
          {
-            QBoxLayout * lineOneLayout = NewHBoxLayout(lineOne, 0, 5);
+            QBoxLayout * lineOneLayout = NewHBoxLayout(lineOne, 5);
 
             _targetFormat = CreateSettingsComboBox(tr("&Output Format:"), lineOne, lineOneLayout);
             connect(_targetFormat, SIGNAL(activated(int)), this, SLOT(UpdateButtons()));
@@ -969,7 +969,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
 
          QWidget * lineTwo = new QWidget(settingsGroup);
          {
-            QBoxLayout * lineTwoLayout = NewHBoxLayout(lineTwo, 0, 5);
+            QBoxLayout * lineTwoLayout = NewHBoxLayout(lineTwo, 5);
 
             _inPlaceConversions = new QCheckBox(tr("Convert &In Place"), lineTwo);
             connect(_inPlaceConversions, SIGNAL(clicked()), this, SLOT(ConvertInPlaceToggled()));
