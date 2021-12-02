@@ -1638,7 +1638,11 @@ void AudioMoveWindow :: ShowAddFoldersDialog()
 {
    if (_addFolders == NULL) 
    {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       _addFolders = new AudioMoveFileDialog("audiofolders", QString(), QFileDialog::DirectoryOnly, this);
+#else
+      _addFolders = new AudioMoveFileDialog("audiofolders", QString(), QFileDialog::Directory,     this);
+#endif
       connect(_addFolders, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DialogAddFolder(const QStringList &)));
    }
    _addFolders->selectFile(LocalToQ(""));
@@ -1735,7 +1739,11 @@ void AudioMoveWindow :: ShowDestDialog()
 {
    if (_chooseDestDir == NULL) 
    {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       _chooseDestDir = new AudioMoveFileDialog("dest", QString(), QFileDialog::DirectoryOnly, this);
+#else
+      _chooseDestDir = new AudioMoveFileDialog("dest", QString(), QFileDialog::Directory,     this);
+#endif
       connect(_chooseDestDir, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DestinationDirSelected(const QStringList &)));
    }
    _chooseDestDir->selectFile(LocalToQ(""));

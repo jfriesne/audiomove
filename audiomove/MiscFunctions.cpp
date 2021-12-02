@@ -256,14 +256,22 @@ static void DoBoxCustomization(QBoxLayout * bl, int margin, int spacing)
 {
    if (margin >= 0)
    {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       bl->setMargin(margin);
+#else
+      bl->setContentsMargins(margin,margin,margin,margin);  // I guess? -jaf
+#endif
       bl->setSpacing((spacing>=0)?spacing:margin);
    }
    else if (spacing >= 0) bl->setSpacing(spacing);
    else
    {
       bl->setSpacing(0);
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       bl->setMargin(0);
+#else
+      bl->setContentsMargins(0,0,0,0);  // I guess? -jaf
+#endif
    }
 }
 
