@@ -33,12 +33,12 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QComboBox>
-#include <QDesktopWidget>
 #include <QAbstractButton>
 #include <QPainter>
 #include <QPixmap>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QScreen>
 
 #include "message/Message.h"
 #include "util/ByteBuffer.h"
@@ -168,9 +168,6 @@ void ShowDialog(QWidget * w)
 
 status_t SaveWindowPositionToArchive(const QWidget * window, Message & archive)
 {
-   QDesktopWidget * desktop = QApplication::desktop();
-   if ((desktop)&&(desktop->isVirtualDesktop() == false)) MRETURN_ON_ERROR(archive.AddInt32("screen", desktop->screenNumber((QWidget *)window)));
-
    // see file:/usr/local/qt/doc/html/geometry.html (at the bottom)
    QPoint p = window->pos();
    QSize  s = window->size();
@@ -179,8 +176,6 @@ status_t SaveWindowPositionToArchive(const QWidget * window, Message & archive)
 
 status_t RestoreWindowPositionFromArchive(QWidget * window, const Message & archive, bool allowResize)
 {
-   QDesktopWidget * desktop = QApplication::desktop();
-
    Rect r;
    MRETURN_ON_ERROR(archive.FindRect("geometry", r));
 
@@ -190,12 +185,11 @@ status_t RestoreWindowPositionFromArchive(QWidget * window, const Message & arch
 
    bool onScreen = false;
    {
-      int numScreens = desktop->numScreens();
-      for (int i=0; i<numScreens; i++)
+      const QList<QScreen *> screens = QGuiApplication::screens();
+      for (int i=0; i<screens.size(); i++)
       {
          // Make sure we are at least partially visible on the screen!
-         QRect screenRect = desktop->availableGeometry(i);
-         if (qr.intersects(screenRect))
+         if (qr.intersects(screens[i]->availableGeometry()))
          {
             onScreen = true;
             break;
@@ -205,7 +199,7 @@ status_t RestoreWindowPositionFromArchive(QWidget * window, const Message & arch
 
    // If it's not visible anywhere, move it to the center of the primary screen.
    // and the user can decide where to put it.
-   if (onScreen == false) qr.moveCenter(desktop->availableGeometry().center());
+   if (onScreen == false) qr.moveCenter(QGuiApplication::primaryScreen()->availableGeometry().center());
    if (allowResize) window->resize(QSize(qr.width(), qr.height()));
    window->move(qr.left(), qr.top());
    return B_NO_ERROR;
