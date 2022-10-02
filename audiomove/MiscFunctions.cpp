@@ -213,7 +213,8 @@ status_t EnsureFileFolderExists(const String & fileName, bool createIfNecessary)
    String path = GetPathSepChar();
 #endif
 
-   StringTokenizer tok(fileName(), GetPathSepChar()(), NULL);
+   const String psc = GetPathSepChar();
+   StringTokenizer tok(fileName(), (psc+psc)());  // specifying the path-sep char twice to make it a "hard separator"
    const char * next;
    while((next = tok()) != NULL)
    {

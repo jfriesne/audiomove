@@ -361,7 +361,7 @@ protected:
             const char * e = GetAudioFormatExtensions(i);
             if (e)
             {
-               StringTokenizer tok(e, ";", NULL);
+               StringTokenizer tok(e, ";;", NULL);
                const char * nextExt;
                while((nextExt = tok()) != NULL)
                {
