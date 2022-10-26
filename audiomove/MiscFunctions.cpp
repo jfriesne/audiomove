@@ -49,7 +49,7 @@
 #include "zlib/ZLibCodec.h"
 #include "audiomove/MiscFunctions.h"
 
-// Miscellaneous functions used by AudioMove... 
+// Miscellaneous functions used by AudioMove...
 namespace audiomove {
 
 status_t ReadSettingsFile(const char * prefsPath, Message & settings)
@@ -225,7 +225,7 @@ status_t EnsureFileFolderExists(const String & fileName, bool createIfNecessary)
 #else
          DIR * dir = opendir(path());
          if (dir) closedir(dir);
-         else 
+         else
          {
             if (createIfNecessary == false) return B_ACCESS_DENIED;
             (void) mkdir(path(), S_IRWXU|S_IRWXG|S_IRWXO);

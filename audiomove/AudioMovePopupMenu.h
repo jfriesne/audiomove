@@ -104,7 +104,7 @@ signals:
      * @param action the QAction object representing the menu item that was fired.  Will be NULL if the menu was cancelled.
      */
    void PopupMenuResult(int objectType, int objectID, int menuID, QAction * action);
- 
+
 private slots:
    void ActionTriggered(QAction *);
    void EmitSignal();

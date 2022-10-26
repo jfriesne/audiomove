@@ -51,7 +51,7 @@ public:
    /** Standard destructor */
    virtual ~AudioMoveThread();
 
-   /** Opens the file specified in the constructor for reading or writing. 
+   /** Opens the file specified in the constructor for reading or writing.
     *  @return B_NO_ERROR on success, or B_ERROR on failure.
     */
    virtual status_t OpenFile() = 0;

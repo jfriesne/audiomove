@@ -51,10 +51,10 @@ status_t SampleRateThread :: OpenFile()
       CloseFileAux();  // paranoia
       _inputFrame = _availFrames = 0;
 
-      int q; 
+      int q;
       switch(_quality)
       {
-         default:  // fall thru!                              
+         default:  // fall thru!
          case AUDIO_CONVERSION_QUALITY_BEST:   q = SRC_SINC_BEST_QUALITY;   break;
          case AUDIO_CONVERSION_QUALITY_BETTER: q = SRC_SINC_MEDIUM_QUALITY; break;
          case AUDIO_CONVERSION_QUALITY_GOOD:   q = SRC_SINC_FASTEST;        break;
@@ -108,7 +108,7 @@ ByteBufferRef SampleRateThread :: ProcessBuffer(const ByteBufferRef & buf, QStri
          outPtr        += (genFrames*_numStreams);
          framesWritten += genFrames;
       }
-      else if (genFrames < 0) 
+      else if (genFrames < 0)
       {
          CloseFile(CLOSE_FLAG_ERROR);
          return ByteBufferRef();

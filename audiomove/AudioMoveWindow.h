@@ -67,7 +67,7 @@ Q_OBJECT
 
 public:
    AudioMoveTreeWidget(QWidget * parent);
- 
+
    virtual void dragEnterEvent(QDragEnterEvent * e);
    virtual void dragMoveEvent(QDragMoveEvent * e) {e->acceptProposedAction();}
    virtual void dropEvent(QDropEvent * e);

@@ -1,6 +1,6 @@
 #include "win32dirent.h"
 #include <errno.h>
-#include <io.h> 
+#include <io.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,7 +24,7 @@ DIR *opendir(const char *name)
     if(name && name[0])
     {
         size_t base_length = strlen(name);
-        const char *all = 
+        const char *all =
             strchr("/\\", name[base_length - 1]) ? "*" : "/*";
 
         if((dir = (DIR *) malloc(sizeof *dir)) != 0 &&
@@ -36,14 +36,14 @@ DIR *opendir(const char *name)
             {
                 dir->result.d_name = 0;
             }
-            else 
+            else
             {
                 free(dir->name);
                 free(dir);
                 dir = 0;
             }
         }
-        else 
+        else
         {
             free(dir);
             dir   = 0;
@@ -73,7 +73,7 @@ int closedir(DIR *dir)
         free(dir);
     }
 
-    if(result == -1) 
+    if(result == -1)
     {
         errno = EBADF;
     }
@@ -127,7 +127,7 @@ void rewinddir(DIR *dir)
     documentation for any purpose is hereby granted without fee, provided
     that this copyright and permissions notice appear in all copies and
     derivatives.
-    
+
     This software is supplied "as is" without express or implied warranty.
 
     But that said, if there are any problems please get in touch.

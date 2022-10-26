@@ -37,7 +37,7 @@ public:
    virtual status_t OpenFile() {return B_UNIMPLEMENTED;}
    virtual void CloseFile(uint32 /*closeFlags*/) {/* empty */}
    virtual status_t GetFilesThatWillBeOverwritten(Message & /*msg*/, const String & /*fn*/) {return B_NO_ERROR;}
-   
+
    /** Returns our audio format code */
    virtual const String & GetFileName() const {return _filePath;}
 

@@ -136,8 +136,8 @@ static String AddPath(const String & dir, const String & file)
 
    String f = file;
    while(f.StartsWith(GetPathSepChar())) f = f.Substring(GetPathSepChar().Length());
-  
-   return d + GetPathSepChar() + f; 
+
+   return d + GetPathSepChar() + f;
 }
 
 /** This thread handles the initial opening and setup of file items, so that the GUI isn't blocked during setup */
@@ -213,12 +213,12 @@ protected:
 
             /** In most cases, we just read the file using libsndfile */
             LibSndFileIOThread * inputThread = NULL;
-            if (inputThreadRef()==NULL) 
+            if (inputThreadRef()==NULL)
             {
                inputThread = new LibSndFileIOThread(sourceFile);
                inputThreadRef.SetRef(inputThread);
             }
-            
+
             SF_BROADCAST_INFO bi; memset(&bi, 0, sizeof(bi));
             bool biValid = false;
             if (inputThreadRef()->OpenFile().IsOK())
@@ -252,7 +252,7 @@ protected:
 
             const char * newExt = origDestDir.HasChars() ? GetAudioFormatExtensions(targetFormat) : NULL;
             if (newExt) destFile = ReplaceExtension(destFile, newExt);
-#ifdef WIN32  
+#ifdef WIN32
             // This is so that e.g. adding D:/ as a folder will work;
             // without this change we'd try to create a folder named "D:"
             // and Windows would refuse to do it, causing the conversion to
@@ -280,7 +280,7 @@ protected:
                switch(targetFormat)
                {
                   case AUDIO_FORMAT_WAV:
-                  case AUDIO_FORMAT_AIFF: 
+                  case AUDIO_FORMAT_AIFF:
                   case AUDIO_FORMAT_FLAC:
                   case AUDIO_FORMAT_OGGVORBIS:
                   case AUDIO_FORMAT_PAF_BE:
@@ -294,7 +294,7 @@ protected:
                      if (odd.EndsWith("/") == false) odd += '/';
                      odd += "dummy";  // because EnsureFileFolderExists() expects to see a filename at the end... it doesn't matter what
 
-                     // If we are converting sample rates, we need to update our time-reference count to match 
+                     // If we are converting sample rates, we need to update our time-reference count to match
                      if (biValid)
                      {
                         uint32 inputSampleRate = inputThreadRef()->GetInputFileSampleRate();
@@ -302,7 +302,7 @@ protected:
                         {
                            int64 oldTimeRef = (((int64)bi.time_reference_high)<<32)|(((int64)bi.time_reference_low)&(0xFFFFFFFF));
                            int64 newTimeRef = (oldTimeRef*targetSampleRate)/inputSampleRate;
-                           bi.time_reference_high = (uint32)(newTimeRef>>32); 
+                           bi.time_reference_high = (uint32)(newTimeRef>>32);
                            bi.time_reference_low  = (uint32)(newTimeRef&0xFFFFFFFF);
                         }
                      }
@@ -312,7 +312,7 @@ protected:
                   }
                   break;
 
-                  default:  
+                  default:
                      errorString = qApp->translate("AudioSetupThread", "Unknown output format");
                      outputThread.SetRef(new ErrorIOThread(destFile));
                   break;
@@ -374,7 +374,7 @@ protected:
       // Then add our new extension
       return s + (useUpperCase ? ext.ToUpperCase() : ext.ToLowerCase()).Substring(0, ";");
    }
- 
+
    status_t ReplaceExtensionAux(String & s, const String & es, bool & useUpperCase) const
    {
       if (s.EndsWithIgnoreCase(es) == false) return B_DATA_NOT_FOUND;
@@ -444,7 +444,7 @@ status_t AudioMoveItem :: StartInternalThreads()
       if ((startup()->AddBool(AUDIOMOVE_NAME_OPENFILE, true).IsOK(ret))&&(_threads[STAGE_SOURCE]()->MessageReceivedFromUpstream(startup).IsOK(ret)))
       {
          _numActiveBuffers++;  // the OPENFILE command counts as a buffer!
-         for (uint32 i=0; i<ARRAYITEMS(_threads); i++) 
+         for (uint32 i=0; i<ARRAYITEMS(_threads); i++)
          {
             if (_threads[i]()->StartInternalThread().IsError(ret))
             {
@@ -520,7 +520,7 @@ bool AudioMoveItem :: operator<(const QTreeWidgetItem & item) const
       case MOVE_COLUMN_DEST_WIDTH:    return myOutput->GetOutputFileSampleWidth()  < hisOutput->GetOutputFileSampleWidth();
       case MOVE_COLUMN_QUALITY:       return myConv->GetConversionQuality()        < hisConv->GetConversionQuality();
       case MOVE_COLUMN_PERCENT_DONE:  return GetPercentDone()                      < rhs.GetPercentDone();
-      case MOVE_COLUMN_STATUS:        
+      case MOVE_COLUMN_STATUS:
       {
          int ret = muscleCompare(GetStatus(), rhs.GetStatus());
          return ret ? (ret<0) : (_statusString<rhs._statusString);
@@ -595,7 +595,7 @@ status_t AudioMoveItem :: SendBuffers(bool allowChangeStatus)
                    ((bufSamples < _samplesLeft)||(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true)           .IsOK())) &&
                    (msg()->AddInt32(AUDIOMOVE_NAME_ORIGSIZE, bufSamples)                                .IsOK())  &&
                    (msg()->AddFlat(AUDIOMOVE_NAME_BUF, buf)                                             .IsOK())  &&
-                   (input->MessageReceivedFromUpstream(msg)                                             .IsOK())) 
+                   (input->MessageReceivedFromUpstream(msg)                                             .IsOK()))
                {
                   _samplesLeft -= bufSamples;
                   _numActiveBuffers++;
@@ -625,7 +625,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
       {
          int32 osize;
          if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, &osize).IsOK())) _samplesComplete += osize;
-         else 
+         else
          {
             if (_totalSamples > 0) SetStatus((_totalSamples>0)?MOVE_STATUS_ERROR:MOVE_STATUS_COMPLETE);
             ShutdownInternalThreads();
@@ -664,7 +664,7 @@ public:
 
       TextElideMode textElideMode = option.textElideMode;
       switch(index.column())
-      {  
+      {
          case MOVE_COLUMN_SOURCE_FILE:
          case MOVE_COLUMN_DEST_FILE:
             textElideMode = ElideLeft;
@@ -725,7 +725,7 @@ public:
 
 private:
    QColor MakeHighlightedColor(const QColor & c) const
-   { 
+   {
       QColor hc = c;
            if (hc.red()   > 75) hc.setRed((hc.red()*4)/5);
       else if (hc.green() > 75) hc.setGreen((hc.green()*4)/5);
@@ -751,7 +751,7 @@ AudioMoveTreeWidget :: AudioMoveTreeWidget(QWidget * parent) : QTreeWidget(paren
    setSelectionMode(ExtendedSelection);
    setSelectionBehavior(SelectRows);
    setUniformRowHeights(true);
- 
+
    setColumnCount(NUM_MOVE_COLUMNS);
    header()->setStretchLastSection(false);
    header()->installEventFilter(this);
@@ -772,7 +772,7 @@ void AudioMoveTreeWidget :: GetDisplayMenuInfo(bool & canResetOrdering, int & vi
    QHeaderView * h = header();
    canResetOrdering = false;
    visCount = 0;
-   for (int i=MOVE_COLUMN_JOB_ID+1; i<h->count(); i++) 
+   for (int i=MOVE_COLUMN_JOB_ID+1; i<h->count(); i++)
    {
       if (h->visualIndex(i) != i) canResetOrdering = true;
       if (!h->isSectionHidden(i)) visCount++;
@@ -851,7 +851,7 @@ void AudioMoveTreeWidget :: DisplayMenuItemChosen(int, int, int menuItemID)
    UpdateDisplayMenu();
 }
 
-void AudioMoveTreeWidget :: UpdateRow(AudioMoveItem * ami) 
+void AudioMoveTreeWidget :: UpdateRow(AudioMoveItem * ami)
 {
    QHeaderView * h = header();
    int lastIndex = NUM_MOVE_COLUMNS-1;
@@ -902,7 +902,7 @@ void AudioMoveTreeWidget :: dropEvent(QDropEvent * e)
       e->acceptProposedAction();
       QList<QUrl> urls = e->mimeData()->urls();
       QStringList sl;
-      for (int i=0; i<urls.size(); i++) 
+      for (int i=0; i<urls.size(); i++)
       {
          QString s = urls[i].toLocalFile();
          if (s.length() > 0) sl.push_back(s);  // for some reason Qt4 adds an empty URL
@@ -918,7 +918,7 @@ void AudioMoveTreeWidget :: resizeEvent(QResizeEvent * e)
    update();
 }
 
-AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, WindowFlags f) 
+AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, WindowFlags f)
    : QMainWindow(parent, f)
    , _chooseDestDir(NULL)
    , _addFiles(NULL)
@@ -975,9 +975,9 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
             connect(_inPlaceConversions, SIGNAL(clicked()), this, SLOT(ConvertInPlaceToggled()));
             connect(_inPlaceConversions, SIGNAL(stateChanged(int)), this, SLOT(UpdateButtons()));
             lineTwoLayout->addWidget(_inPlaceConversions);
-           
+
             lineTwoLayout->addSpacing(5);
- 
+
             _destinationStack = new QStackedWidget(lineTwo);  // FogBugz #4388
             {
                QWidget * destWidgets = new QWidget;
@@ -1110,7 +1110,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
       SetInPlaceConversions(ipc);
    }
 
-   // Allow us to override our settings from the command line 
+   // Allow us to override our settings from the command line
    {
       String temp;
 
@@ -1155,7 +1155,7 @@ void AudioMoveWindow :: ConvertInPlaceToggled()
       amb->setDefaultButton(dynamic_cast<QPushButton *>(amb->button(QMessageBox::No)));
       amb->setEscapeButton(amb->button(QMessageBox::No));
       amb->setButtonText(QMessageBox::YesToAll, tr("Yes, and don't show this again"));
-      amb->Go(); 
+      amb->Go();
    }
 }
 
@@ -1195,7 +1195,7 @@ AudioMoveWindow :: ~AudioMoveWindow()
    // Save file-view state
    {
       const QHeaderView * h = _processList->header();
-      for (int i=0; i<h->count(); i++) 
+      for (int i=0; i<h->count(); i++)
       {
          settingsMsg.AddInt32("amw_colw", h->sectionSize(i));
          settingsMsg.AddInt32("amw_coli", h->visualIndex(i));
@@ -1240,7 +1240,7 @@ QComboBox * AudioMoveWindow :: CreateSettingsComboBox(const QString & label, QWi
       subLayout->addWidget(ret);
       subLayout->addStretch(1);
    }
-   layout->addWidget(subWidget); 
+   layout->addWidget(subWidget);
    return ret;
 }
 
@@ -1276,9 +1276,9 @@ static void UpdateComboBoxBackground(QComboBox * b, int errorLevel)
       QPalette p = b->palette();
       p.setColor(b->backgroundRole(), GetColorForErrorLevel(errorLevel));
       b->setAutoFillBackground(true);
-      b->setPalette(p);   
+      b->setPalette(p);
    }
-   else 
+   else
    {
       b->setPalette(QPalette());
       b->setAutoFillBackground(false);
@@ -1369,7 +1369,7 @@ uint32 AudioMoveWindow :: GetNumActiveTransfers(bool selectedOnly, uint32 * optR
       AudioMoveItem * next = iter.GetValue();
       if ((optRetNumSel)&&(next->isSelected())) (*optRetNumSel)++;
       switch(next->GetStatus())
-      { 
+      {
          case MOVE_STATUS_ERROR:
             if (optRetErrs) (*optRetErrs)++;
          break;
@@ -1623,7 +1623,7 @@ bool AudioMoveWindow :: GetConfirmOverwrites() const
 
 void AudioMoveWindow :: ShowAddFilesDialog()
 {
-   if (_addFiles == NULL) 
+   if (_addFiles == NULL)
    {
       _addFiles = new AudioMoveFileDialog("audiofiles", QString(), QFileDialog::ExistingFiles, this);
       connect(_addFiles, SIGNAL(FilesSelected(const QStringList &)), this, SLOT(DialogAddFiles(const QStringList &)));
@@ -1636,7 +1636,7 @@ void AudioMoveWindow :: ShowAddFilesDialog()
 
 void AudioMoveWindow :: ShowAddFoldersDialog()
 {
-   if (_addFolders == NULL) 
+   if (_addFolders == NULL)
    {
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       _addFolders = new AudioMoveFileDialog("audiofolders", QString(), QFileDialog::DirectoryOnly, this);
@@ -1672,7 +1672,7 @@ void AudioMoveWindow :: AddFiles(const QStringList & files)
 void AudioMoveWindow :: AddFile(const QString & qqfn)
 {
    QString qfn(qqfn);
-#ifdef WIN32  
+#ifdef WIN32
    // this cleanup shouldn't be necessary, but it is
    qfn.replace('\\', '/');
 #endif
@@ -1717,7 +1717,7 @@ void AudioMoveWindow :: DequeueTransfers()
          bool update = false;
          switch(next->GetStatus())
          {
-            case MOVE_STATUS_WAITING: 
+            case MOVE_STATUS_WAITING:
                update = true;
                (void) next->StartInternalThreads();  // only has an effect the first time
             // fall thru!
@@ -1737,7 +1737,7 @@ void AudioMoveWindow :: DestinationDirSelected(const QStringList & sl)
 
 void AudioMoveWindow :: ShowDestDialog()
 {
-   if (_chooseDestDir == NULL) 
+   if (_chooseDestDir == NULL)
    {
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
       _chooseDestDir = new AudioMoveFileDialog("dest", QString(), QFileDialog::DirectoryOnly, this);
@@ -1824,7 +1824,7 @@ void AudioMoveWindow :: UpdateDestinationPathStatus()
    String s = FromQ(_outputFolderPath->text());
    if (s.EndsWith("/") == false) s += '/';
    if (EnsureFileFolderExists(s+"dummy", false).IsOK()) _outputFolderPath->setPalette(QPalette());
-   else 
+   else
    {
       QPalette p = _outputFolderPath->palette();
       p.setColor(_outputFolderPath->backgroundRole(), QColor(255,200,200));
@@ -1847,7 +1847,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
       case BUFFER_RETURNED_EVENT_TYPE:
       {
          const BufferReturnedEvent * bre = dynamic_cast<BufferReturnedEvent *>(evt);
-         if (bre) 
+         if (bre)
          {
             MessageRef msg = bre->GetMessage();
             if (msg())
@@ -1868,12 +1868,12 @@ bool AudioMoveWindow :: event(QEvent * evt)
                         if (_moveItems.Put(ami->GetTag(), ami).IsOK())
                         {
                            String errorString; (void) subMsg()->FindString(SETUP_NAME_ERROR, errorString);
-                           if (errorString.HasChars()) 
+                           if (errorString.HasChars())
                            {
                               ami->SetStatus(MOVE_STATUS_ERROR);
                               ami->SetStatusString(ToQ(errorString()));
                            }
-                           else if ((GetConfirmOverwrites())&&(subMsg()->HasName(SETUP_NAME_FILESTOBEOVERWRITTEN))&&(_pendingConfirmations.Put(ami, true).IsOK())) 
+                           else if ((GetConfirmOverwrites())&&(subMsg()->HasName(SETUP_NAME_FILESTOBEOVERWRITTEN))&&(_pendingConfirmations.Put(ami, true).IsOK()))
                            {
                               QString filesStr;
                               const char * next;
@@ -1985,7 +1985,7 @@ void AudioMoveConfirmationDialog :: DoConfirmationResult(bool isYes, bool isToAl
 
 void AudioMoveWindow :: FinalizePendingConfirmations(uint32 newState, const QString * optErrStr)
 {
-   for (HashtableIterator<AudioMoveItem *, bool> iter(_pendingConfirmations); iter.HasData(); iter++) 
+   for (HashtableIterator<AudioMoveItem *, bool> iter(_pendingConfirmations); iter.HasData(); iter++)
    {
       iter.GetKey()->SetStatus(newState);
       if (optErrStr) iter.GetKey()->SetStatusString(*optErrStr);
@@ -2002,7 +2002,7 @@ void AudioMoveWindow :: ShowConfirmationDialog()
 void AudioMoveWindow :: UpdateConfirmationState()
 {
    if ((_pendingConfirmations.HasItems())&&(GetConfirmOverwrites() == false)) FinalizePendingConfirmations(MOVE_STATUS_WAITING, NULL);
-   if (_pendingConfirmations.HasItems()) 
+   if (_pendingConfirmations.HasItems())
    {
       if (_confirmationDialog == NULL) _confirmationDialog = new AudioMoveConfirmationDialog(this);
       _confirmationDialog->UpdateStatus();
@@ -2016,7 +2016,7 @@ void AudioMoveWindow :: UpdateConfirmationState()
 void AudioMoveWindow :: DoConfirmationResult(bool isYes, bool isToAll)
 {
    static const QString errStr = tr("Cancelled");
-   
+
    uint32 newStatus = isYes?MOVE_STATUS_WAITING:MOVE_STATUS_ERROR;
 
         if (isToAll) FinalizePendingConfirmations(newStatus, isYes?NULL:&errStr);

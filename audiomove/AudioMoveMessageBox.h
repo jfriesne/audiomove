@@ -11,7 +11,7 @@
 namespace audiomove {
 
 /** This implementation of QMessageBox is designed to simplify the
-  * conversion of modal code (i.e. code that calls modal QMessageBox functions) 
+  * conversion of modal code (i.e. code that calls modal QMessageBox functions)
   * into a safer, non-modal code style.
   */
 class AudioMoveMessageBox : public QMessageBox
@@ -73,7 +73,7 @@ signals:
      * @param objectID The object ID value, as was passed in to Go()
      */
    void OptionChosen(int buttonID, const muscle::MessageRef & msg, int objectType, int objectID);
- 
+
 protected:
    virtual void done(int r);
 

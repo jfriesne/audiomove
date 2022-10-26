@@ -28,7 +28,7 @@ namespace audiomove {
 class AKRipThread : public AudioMoveThread
 {
 public:
-   /** Constructor for reading a file from disk. 
+   /** Constructor for reading a file from disk.
      * @param readPath the path to the track on a CD, e.g. "D:\Track 1.cda"
      */
    AKRipThread(const String & readPath);
@@ -40,11 +40,11 @@ public:
 
    virtual void CloseFile(uint32 closeFlags);
    virtual status_t GetFilesThatWillBeOverwritten(Message &, const String &) {return B_NO_ERROR;}
-   
+
    /** Returns our audio file's name */
    virtual const String & GetFileName() const {return _fileName;}
 
-   /** Returns our audio input format code.  Set to WAV so that 
+   /** Returns our audio input format code.  Set to WAV so that
      * when the user selects "Audio Format = Source", he'll get a WAV file.
      */
    virtual uint32 GetInputFileFormat() const {return AUDIO_FORMAT_WAV;}
@@ -87,7 +87,7 @@ private:
       ~AKRipDriveInterface();
 
       char GetDriveLetter() const {return _driveLetter;}
-      bool IsValid() const {return (_cdHandle != NULL);} 
+      bool IsValid() const {return (_cdHandle != NULL);}
       int GetFirstTrack() const {return _toc.firstTrack;}
       int GetLastTrack() const {return _toc.lastTrack;}
 

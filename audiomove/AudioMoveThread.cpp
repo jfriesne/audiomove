@@ -41,13 +41,13 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
    {
       if (msg()->HasName(AUDIOMOVE_NAME_OPENFILE))
       {
-         if (OpenFile().IsError()) 
+         if (OpenFile().IsError())
          {
             char buf[128]; sprintf(buf, "Couldn't open %s file", IsOutput() ? "output" : "input");
             msg()->AddString(AUDIOMOVE_NAME_STATUS, buf);
          }
       }
-      else 
+      else
       {
          bool isLastBuffer;
          if (msg()->FindBool(AUDIOMOVE_NAME_ISLAST, &isLastBuffer).IsError()) isLastBuffer = false;
@@ -57,7 +57,7 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
          {
             QString errStr;
             ByteBufferRef newRef = ProcessBuffer(bufRef, errStr, isLastBuffer);
-            if (newRef() == NULL) 
+            if (newRef() == NULL)
             {
                (void) msg()->RemoveName(AUDIOMOVE_NAME_BUF);
                if (errStr.length() > 0) (void) msg()->ReplaceString(true, AUDIOMOVE_NAME_STATUS, FromQ(errStr));

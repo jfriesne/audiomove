@@ -41,7 +41,7 @@ public:
 
    virtual void CloseFile(uint32 closeFlags);
    virtual status_t GetFilesThatWillBeOverwritten(Message & msg, const String & fn);
-   
+
    /** Returns our audio file's name */
    virtual const String & GetFileName() const {return _fileName;}
 

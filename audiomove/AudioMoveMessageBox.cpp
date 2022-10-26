@@ -31,7 +31,7 @@ void AudioMoveMessageBox :: EnableHackFixForFogBugz15263()
 
 void AudioMoveMessageBox :: Go(int objectType, int objectID, const MessageRef & messageState)
 {
-   _objectType = objectType;  
+   _objectType = objectType;
    _objectID   = objectID;
    _msg        = messageState;
    _signalEmitted = false;

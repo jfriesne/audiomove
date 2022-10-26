@@ -95,14 +95,14 @@ void AudioMovePopupMenu :: EmitSignal()
          pm = pm->parent();
       }
    }
-   
+
    emit PopupMenuResult(objectType, objectID, id, _actionToEmit);
 }
 
 void AudioMovePopupMenu :: ActionTriggered(QAction * act)
 {
    int id;
-   if (_actionToID.Get(act, id).IsOK()) 
+   if (_actionToID.Get(act, id).IsOK())
    {
       _actionToEmit = act;
       if (isHidden()) EmitSignal();

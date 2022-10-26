@@ -123,12 +123,12 @@ static BOOL ShouldUseWindows2000StyleCreate()
    OSVERSIONINFO osver; memset(&osver, 0, sizeof (osver));
    osver.dwOSVersionInfoSize = sizeof (osver);
    GetVersionEx(&osver);
-   if (osver.dwPlatformId == VER_PLATFORM_WIN32_NT) 
+   if (osver.dwPlatformId == VER_PLATFORM_WIN32_NT)
    {
       /* Win2000 is NT-5.0, Win-XP is NT-5.1 */
       if (osver.dwMajorVersion > 4) return true;
-      if (osver.dwMajorVersion == 4) 
-      {      
+      if (osver.dwMajorVersion == 4)
+      {
          /* NT-4.x */
          char * vers = (char *) osver.szCSDVersion;
          if (strlen(vers) == 0) return false;
@@ -159,7 +159,7 @@ static ::HANDLE GetDriveFileHandle(BYTE i)
    DWORD   dwAccessMode = 0;
 
    dwAccessMode = FILE_SHARE_READ;
-   if (ShouldUseWindows2000StyleCreate()) 
+   if (ShouldUseWindows2000StyleCreate())
    {
       /* if Win2K or greater, add GENERIC_WRITE */
       dwFlags |= GENERIC_WRITE;
@@ -168,7 +168,7 @@ static ::HANDLE GetDriveFileHandle(BYTE i)
    char buf[12]; sprintf(buf, "\\\\.\\%c:", (char)('A'+i));
 
    ::HANDLE fh = CreateFileA(buf, dwFlags, dwAccessMode, NULL, OPEN_EXISTING, 0, NULL);
-   if (fh == AUDIOMOVE_INVALID_HANDLE_VALUE) 
+   if (fh == AUDIOMOVE_INVALID_HANDLE_VALUE)
    {
       /*
        * it went foobar somewhere, so try it with the GENERIC_WRITE
@@ -215,7 +215,7 @@ static status_t GetDriveInformation(BYTE i, DRIVE * pDrive)
     */
    SCSI_ADDRESS scsiAddr; memset(&scsiAddr, 0, sizeof (SCSI_ADDRESS));
    scsiAddr.Length = sizeof (SCSI_ADDRESS);
-   if (DeviceIoControl(fh, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &scsiAddr, sizeof (SCSI_ADDRESS), &returned, NULL)) 
+   if (DeviceIoControl(fh, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &scsiAddr, sizeof (SCSI_ADDRESS), &returned, NULL))
    {
       pDrive->bUsed       = true;
       pDrive->ha          = scsiAddr.PortNumber; /* preliminary */
@@ -225,7 +225,7 @@ static status_t GetDriveInformation(BYTE i, DRIVE * pDrive)
       pDrive->lun         = scsiAddr.Lun;
       pDrive->driveLetter = i;
    }
-   else 
+   else
    {
       pDrive->bUsed   = false;
       CloseHandle(fh);
@@ -277,7 +277,7 @@ AKRipThread::AKRipDriveInterface :: AKRipDriveInterface(char driveLetter) : _dri
    if (_cdHandle)
    {
       ModifyCDParms(_cdHandle, CDP_MSF, false);
-      if (ReadTOC(_cdHandle, &_toc) != SS_COMP) 
+      if (ReadTOC(_cdHandle, &_toc) != SS_COMP)
       {
          memset(&_toc, 0, sizeof(_toc));
          CloseCDHandle(_cdHandle);
@@ -314,7 +314,7 @@ AKRipThread::AKRipDriveInterface * AKRipThread::OpenAKRipDriveInterface(char dri
          ret = new AKRipDriveInterface(driveLetter);
          if ((ret->IsValid() == false)||(_driveDirectory.Put(driveLetter, ret).IsError()))
          {
-            delete ret; 
+            delete ret;
             ret = NULL;
          }
       }
@@ -356,7 +356,7 @@ static uint32 InternalizeArg(const BYTE b[4])
 status_t AKRipThread :: OpenFile()
 {
    CloseFile(CLOSE_FLAG_FINAL);  // paranoia
-   
+
    if (_trackIndex < 0) return B_BAD_OBJECT;
 
    const uint32 maxLen = NUM_SECTORS_PER_TRACKBUF*NUM_BYTES_PER_SECTOR;
@@ -400,12 +400,12 @@ status_t AKRipThread :: OpenFile()
 
 void AKRipThread :: CloseFile(uint32 /*closeFlags*/)
 {
-   if (_trackBuf) 
+   if (_trackBuf)
    {
       free(_trackBuf);
       _trackBuf = NULL;
    }
-   if (_driveInterface) 
+   if (_driveInterface)
    {
       CloseAKRipDriveInterface(_driveInterface);
       _driveInterface = NULL;
@@ -428,7 +428,7 @@ status_t AKRipThread :: CacheCDSectors(uint32 firstSector, uint32 numSectors)
    {
       uint32 retries = 3;
       DWORD dwStatus = SS_ERR;
-      while((retries--)&&(dwStatus != SS_COMP)) 
+      while((retries--)&&(dwStatus != SS_COMP))
       {
          _trackBuf->numFrames   = muscleMin(numSectors, (uint32)NUM_SECTORS_PER_TRACKBUF);
          _trackBuf->startOffset = 0;
@@ -469,7 +469,7 @@ status_t AKRipThread :: ReadCDAudio(float * outBuf, int64 curFrame, uint32 numFr
 
    // Now make sure that our required sectors are loaded
    MRETURN_ON_ERROR(CacheCDSectors(firstSector, lastSector-firstSector));
-   
+
    // Now we'll go through the sectors and assemble their data into (outBuf)
    while(numFrames > 0)
    {
@@ -499,7 +499,7 @@ ByteBufferRef AKRipThread :: ProcessBuffer(const ByteBufferRef & buf, QString & 
          if (ReadCDAudio((float *)buf()->GetBuffer(), _readOffsetFrames, numFramesToRead).IsOK())
          {
             (void) buf()->SetNumBytes(numFramesToRead*NUM_BYTES_PER_FRAMEFL, true);
-            if (isLastBuffer) 
+            if (isLastBuffer)
             {
                _isComplete = true;
                CloseFile(CLOSE_FLAG_FINAL);  // close file now so that it isn't locked
@@ -512,7 +512,7 @@ ByteBufferRef AKRipThread :: ProcessBuffer(const ByteBufferRef & buf, QString & 
       else retErrStr = qApp->translate("AKRipThread", "Bad chunk length %1").arg(numBytes);
    }
 
-   if (isLastBuffer) 
+   if (isLastBuffer)
    {
       if (retErrStr.length() == 0) _isComplete = true;
       CloseFile(((retErrStr.length()>0)?CLOSE_FLAG_ERROR:0)|CLOSE_FLAG_FINAL);  // close file now so that it isn't locked

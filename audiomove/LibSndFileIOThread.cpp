@@ -55,7 +55,7 @@ void LibSndFileIOThread :: DeleteTempFiles()
 status_t LibSndFileIOThread :: OpenFile()
 {
    CloseFile(CLOSE_FLAG_FINAL);  // paranoia
-   
+
    SF_INFO info; memset(&info, 0, sizeof(info));
    if (_numWriteStreams != AUDIO_STREAMS_SOURCE)
    {
@@ -70,11 +70,11 @@ status_t LibSndFileIOThread :: OpenFile()
          case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;    break;
          case AUDIO_FORMAT_FLAC: info.format = SF_FORMAT_FLAC;                    break;
 
-         case AUDIO_FORMAT_OGGVORBIS: 
+         case AUDIO_FORMAT_OGGVORBIS:
             info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
          break;
 
-         case AUDIO_FORMAT_PAF_BE: case AUDIO_FORMAT_PAF_LE: 
+         case AUDIO_FORMAT_PAF_BE: case AUDIO_FORMAT_PAF_LE:
             info.format = SF_FORMAT_PAF | ((_outputFileFormat == AUDIO_FORMAT_PAF_BE) ? SF_ENDIAN_BIG : SF_ENDIAN_LITTLE);
          break;
 
@@ -83,7 +83,7 @@ status_t LibSndFileIOThread :: OpenFile()
          case AUDIO_FORMAT_RF64:     info.format = SF_FORMAT_RF64 | SF_ENDIAN_LITTLE; break;
          case AUDIO_FORMAT_OGGOPUS:  info.format = SF_FORMAT_OGG  | SF_FORMAT_OPUS;   break;
 
-         default:  
+         default:
             return B_ERROR("Unsupported Output file format");  // we only support the above-listed audio formats for output... for now anyway
       }
 
@@ -104,7 +104,7 @@ status_t LibSndFileIOThread :: OpenFile()
                   break;
 
                   default:
-                     info.format |= SF_FORMAT_PCM_S8; 
+                     info.format |= SF_FORMAT_PCM_S8;
                   break;
                }
             break;
@@ -133,7 +133,7 @@ status_t LibSndFileIOThread :: OpenFile()
           }
       }
       else
-      { 
+      {
          String fn = _fileName;
          SNDFILE * file = OpenFileForWriting(fn, info);  // don't merge into the PutOutputFile() call!  This may change (fn)!
          if (PutOutputFile(fn, file).IsOK())
@@ -143,7 +143,7 @@ status_t LibSndFileIOThread :: OpenFile()
          }
       }
    }
-   else 
+   else
    {
       SNDFILE * file = sf_open(_fileName(), SFM_READ, &info);
       if (file)
@@ -178,7 +178,7 @@ status_t LibSndFileIOThread :: OpenFile()
                case SF_FORMAT_PCM_16: _fileSampleWidth = AUDIO_WIDTH_INT16;  break;
 
                case SF_FORMAT_PCM_S8: case SF_FORMAT_PCM_U8:
-                  _fileSampleWidth = AUDIO_WIDTH_INT8;  
+                  _fileSampleWidth = AUDIO_WIDTH_INT8;
                break;
 
                default:
@@ -204,7 +204,7 @@ status_t LibSndFileIOThread :: PutOutputFile(const String & fn, SNDFILE * file)
          if (_tempFiles.Put(fn, file).IsOK()) return B_NO_ERROR;  // success!
          (void) _files.Remove(fn);  // roll back
       }
-      sf_close(file); 
+      sf_close(file);
       unlink(fn());
    }
    return B_ERROR;
@@ -228,7 +228,7 @@ void LibSndFileIOThread :: CloseFile(uint32 closeFlags)
 
 void LibSndFileIOThread :: RescaleAudioBuffer(float * buf, uint32 numFloats, float scaleBy) const
 {
-   if (scaleBy != 1.0f) 
+   if (scaleBy != 1.0f)
    {
       /* Do the bulk of the rescaling in an 8-way unrolled loop, for extra efficiency */
       uint32 leftover = numFloats&0x07;
@@ -302,7 +302,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
             if (sf_error(file) == SF_ERR_NO_ERROR)
             {
                buf()->SetNumBytes(readSamples*sizeof(float), true);
-               if (isLastBuffer) 
+               if (isLastBuffer)
                {
                   _isComplete = true;
                   CloseFile(CLOSE_FLAG_FINAL);  // close file now so that it isn't locked
@@ -319,7 +319,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                // we find any, we'll need to handle it by rescaling the audio; otherwise there will
                // be clipping in the output, which would be a bad thing
                float maxSampleValue = 0.0f;
-               for (uint32 i=0; i<numSamples; i++) maxSampleValue = fmaxf(maxSampleValue, fabsf(samples[i])); 
+               for (uint32 i=0; i<numSamples; i++) maxSampleValue = fmaxf(maxSampleValue, fabsf(samples[i]));
                if (maxSampleValue/_currentMaxOutputSample > 1.0f)
                {
                   // Whoops!  We need to rescale everything down a bit, or we'll suffer from clipping!
@@ -332,7 +332,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
             if (DoWriteToFiles(samples, numSamples).IsOK())
             {
                _numFrames += (numSamples/_numStreams);
-               if (isLastBuffer) 
+               if (isLastBuffer)
                {
                   if (_currentMaxOutputSample != DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE)
                   {
@@ -349,7 +349,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                         {
                            retErrStr = qApp->translate("LibSndFileIOThread", "Error rescaling segment");
                            break;
-                        } 
+                        }
 
                         prevOffset    = nextOffset;
                         prevMaxSample = nextMaxSample;
@@ -367,7 +367,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
       else retErrStr = qApp->translate("LibSndFileIOThread", "Bad chunk length %1").arg(numBytes);
    }
 
-   if (isLastBuffer) 
+   if (isLastBuffer)
    {
       if (retErrStr.length() == 0) _isComplete = true;
       CloseFile(((retErrStr.length()>0)?CLOSE_FLAG_ERROR:0)|CLOSE_FLAG_FINAL);  // close file now so that it isn't locked
@@ -401,7 +401,7 @@ SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const 
                   okayToGo = true;
                   fileName = fn;
                   break;
-               } 
+               }
             }
          }
          if (okayToGo == false) return NULL;  // couldn't find a free temp file name!?
@@ -426,7 +426,7 @@ SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const 
       // Note that this command may fail with older versions of libsndfile, because
       // we're in SFM_RDWR mode and it requires SFM_WRITE.  You can fix the problem
       // by hand-tweaking line 1077 of libsndfile's sndfile.c, or wait for a new
-      // version of libsndfile to come out (I've emailed Erik about the problem) 
+      // version of libsndfile to come out (I've emailed Erik about the problem)
       (void) sf_command(file, SFC_SET_BROADCAST_INFO, (void *) &_bi, sizeof(_bi));
    }
    return file;
@@ -448,7 +448,7 @@ status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, cons
              {
                 fclose(fpCheck);
                 MRETURN_ON_ERROR(msg.AddString(fn, fileName));
-             } 
+             }
           }
       }
       else
@@ -472,7 +472,7 @@ status_t LibSndFileIOThread :: DoReadFromFiles(float * samples, uint32 numSample
       case 0:
          return B_BAD_OBJECT;
 
-      case 1: 
+      case 1:
          // Easy case:  we are just reading from a single file
          return (sf_read_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR("sf_read_float() failed A");
 
@@ -520,7 +520,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
       case 0:
          return B_BAD_OBJECT;
 
-      case 1: 
+      case 1:
          // Easy case:  we are just writing to a single file
          return (sf_write_float(*_files.GetFirstValue(), samples, numSamples) == numSamples) ? B_NO_ERROR : B_ERROR("sf_write_float() failed A");
 
@@ -546,7 +546,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
 
 status_t LibSndFileIOThread :: DoSeekFiles(uint64 offset)
 {
-   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) 
+   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
       if (sf_seek(iter.GetValue(), offset, SEEK_SET) != (sf_count_t)offset) return B_ERROR("sf_seek() failed");
    return B_NO_ERROR;
 }

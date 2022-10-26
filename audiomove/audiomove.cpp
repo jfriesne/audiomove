@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
       {
          args.AddString("disable_bwf", "");
          argv[i] = NULL;
-      } 
+      }
       else if (strchr(argv[i], '=') == NULL)
       {
          args.AddString("file", argv[i]);

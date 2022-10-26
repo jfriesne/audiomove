@@ -1,6 +1,6 @@
 #ifndef _WIN32_DIRENT_H
 #define _WIN32_DIRENT_H
- 
+
 
 #ifdef __cplusplus
 extern "C"

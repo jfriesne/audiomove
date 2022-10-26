@@ -180,7 +180,7 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
       QBoxLayout * extrasLayout = NewVBoxLayout(_extras, 0, 5);
 
       QWidget * hotButtons = new QWidget(_extras);
-      { 
+      {
          QBoxLayout * hbl = NewHBoxLayout(hotButtons, 0, 5);
          for (uint32 i=0; i<NUM_HOT_BUTTONS; i++)
          {
@@ -247,7 +247,7 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
 void AudioMoveFileDialog :: AddBottomWidget(QWidget * w, Alignment alignment)
 {
    QGridLayout * gl = dynamic_cast<QGridLayout*>(layout());
-   if (gl) 
+   if (gl)
    {
       int r = gl->rowCount();
       gl->addWidget(w, r, 0, 1, gl->columnCount(), alignment);
@@ -258,7 +258,7 @@ void AudioMoveFileDialog :: AddBottomWidget(QWidget * w, Alignment alignment)
 void AudioMoveFileDialog :: AddRightWidget(QWidget * w, Alignment alignment)
 {
    QGridLayout * gl = dynamic_cast<QGridLayout *>(layout());
-   if (gl) 
+   if (gl)
    {
       int c = gl->columnCount();
       gl->addWidget(w, 0, c, gl->rowCount(), 1, alignment);
@@ -300,10 +300,10 @@ void AudioMoveFileDialog::RereadDir()
       for (int32 i=0; temp.FindString("path", i, nextPath).IsOK(); i++)
       {
          if (setDir == false)
-         { 
+         {
             QFileInfo fi(LocalToQ(nextPath()));
             if (fi.exists())
-            { 
+            {
                setDirectory(fi.absoluteDir());
                setDir = true;
             }
@@ -331,7 +331,7 @@ void AudioMoveFileDialog :: ClearFileSelections()
 void AudioMoveFileDialog :: SaveRecentListToRegistry() const
 {
    Message temp;
-   for (uint32 i=0; i<_recentFilesList.GetNumItems(); i++) 
+   for (uint32 i=0; i<_recentFilesList.GetNumItems(); i++)
    {
       MessageRef subMsg = GetMessageFromPool();
       const Queue<String> & q = _recentFilesList[i];
@@ -398,16 +398,16 @@ status_t AudioMoveFileDialog :: GetHotButtonDefaults(QString & retLab, String & 
 #ifdef __APPLE__
       case 2:  retLab = tr("Documents");  return GetSystemPath(SYSTEM_PATH_DOCUMENTS, retLoc);
       case 3:  retLab = tr("Volumes");    retLoc = "/Volumes/"; return B_NO_ERROR;
-      case 4:  
+      case 4:
       {
          retLab = GetExecutableName();
          MRETURN_ON_ERROR(GetSystemPath(SYSTEM_PATH_EXECUTABLE, retLoc));
 
          // Get rid of the "AudioMove.app" silliness
          int32 appIdx = retLoc.LastIndexOf(".app");
-         while((appIdx >= 0)&&(retLoc[appIdx] != '/')) appIdx--; 
+         while((appIdx >= 0)&&(retLoc[appIdx] != '/')) appIdx--;
          retLoc = retLoc.Substring(0, appIdx);
-         return B_NO_ERROR; 
+         return B_NO_ERROR;
       }
       case 5:  retLab = tr("Root");       return GetSystemPath(SYSTEM_PATH_ROOT,       retLoc);
 #else
@@ -428,7 +428,7 @@ status_t AudioMoveFileDialog :: GetHotButtonDefaults(QString & retLab, String & 
 void AudioMoveFileDialog :: SaveHotButtonsToRegistry() const
 {
    Message temp;
-   for (uint32 i=0; i<NUM_HOT_BUTTONS; i++) 
+   for (uint32 i=0; i<NUM_HOT_BUTTONS; i++)
    {
       temp.AddString("hotlab", FromQ(_hotButtons[i]->text()));
       temp.AddString("hotloc", _hotButtonDirs[i]);
@@ -464,7 +464,7 @@ void AudioMoveFileDialog :: ResetHotButton(uint32 which)
 void AudioMoveFileDialog :: SaveSettingsToRegistry(const QStringList & qsl)
 {
    Queue<String> sl;
-   for (int32 i=0; i<qsl.count(); i++) 
+   for (int32 i=0; i<qsl.count(); i++)
    {
       String s = LocalFromQ(qsl[i]);
       if (s.EndsWith(_autoSuffix) == false) s += _autoSuffix;
@@ -493,10 +493,10 @@ void AudioMoveFileDialog :: SaveSettingsToRegistry(const QStringList & qsl)
 void AudioMoveFileDialog :: reject()
 {
    QFileDialog::reject();
-   emit Cancelled(); 
+   emit Cancelled();
 }
 
-const Queue<String> & AudioMoveFileDialog :: GetFilePathsForItem(const QTreeWidgetItem * item) const 
+const Queue<String> & AudioMoveFileDialog :: GetFilePathsForItem(const QTreeWidgetItem * item) const
 {
    return GetFilePathsForIndex(GetIndexForItem(item));
 }
@@ -538,7 +538,7 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
 #endif
             {
                const Queue<String> & subList = GetFilePathsForItem(twi);
-               for (int32 j=subList.GetNumItems()-1; j>=0; j--) temp.Put(subList[j], true); 
+               for (int32 j=subList.GetNumItems()-1; j>=0; j--) temp.Put(subList[j], true);
             }
          }
          temp.SortByKey();
@@ -592,14 +592,14 @@ void AudioMoveFileDialog :: CheckForDirectoryChange()
 
    QDir curDir = directory();  // sometimes this is an expensive call!  (FogBugz #4373)
    if (curDir != _lastDirectory)
-   {  
+   {
       _lastDirectory = curDir;
       emit CurrentDirectoryChanged(_lastDirectory);
    }
-   
+
    QStringList sl = selectedFiles();
    if (sl != _lastSelectedFiles)
-   {  
+   {
       _lastSelectedFiles = sl;
       emit SelectedFilesChanged();
    }
@@ -620,7 +620,7 @@ bool AudioMoveFileDialog :: eventFilter(QObject * watched, QEvent * e)
             {
                int which = key - Key_1;
                QTreeWidgetItem * item = _recentFilesTreeWidget->topLevelItem(which);
-               if (item) 
+               if (item)
                {
                   _recentFilesTreeWidget->clearSelection();
                   item->setSelected(true);
@@ -688,7 +688,7 @@ void AudioMoveFileDialog :: CheckForOverwrite(const QStringList & sl)
       {
          const QString & fname = sl[i];
          QFileInfo f(fname);
-         if (f.exists()) 
+         if (f.exists())
          {
             overwriteCount++;
             alreadyExists += ToQ("\n") + fname;
@@ -705,7 +705,7 @@ void AudioMoveFileDialog :: CheckForOverwrite(const QStringList & sl)
       {
          MessageRef files = GetMessageFromPool();
          for (int i=0; i<sl.size(); i++) files()->AddString("files", LocalFromQ(sl[i]));
-         
+
          QString textStr;
          if (overwriteCount == 1) textStr = tr("The file\n%1\n\nalready exists.\n\nAre you sure you want to replace it?").arg(alreadyExists);
                              else textStr = tr("The following files already exist:\n%1\n\nAre you sure you want to replace them?").arg(alreadyExists);
@@ -774,7 +774,7 @@ public:
 void AudioMoveFileDialog :: UpdateRecentFilesTreeWidget()
 {
    _recentFilesTreeWidget->clear();
-   for (uint32 i=0; i<_recentFilesList.GetNumItems(); i++) 
+   for (uint32 i=0; i<_recentFilesList.GetNumItems(); i++)
    {
       QString displayStr;
       const Queue<String> & q = _recentFilesList[i];
@@ -941,7 +941,7 @@ void AudioMoveFileDialog :: UpdateHotButton(uint32 whichButton, const QString & 
 {
    QPushButton * btn = _hotButtons[whichButton];
    btn->setText(label);
-   if (filePath.IsEmpty()) 
+   if (filePath.IsEmpty())
    {
       QPalette p = btn->palette();
       p.setColor(btn->foregroundRole(), lightGray);
@@ -965,7 +965,7 @@ void AudioMoveFileDialogHotButton :: mousePressEvent(QMouseEvent * e)
 
 void AudioMoveFileDialog :: SetSelection(const QString & filePath)
 {
-   selectFile(filePath); 
+   selectFile(filePath);
    UpdateHotButtons();
 
    // Make sure the treeview is scrolled so that the current selection is visible, if possible
