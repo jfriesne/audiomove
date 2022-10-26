@@ -52,25 +52,17 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
          bool isLastBuffer;
          if (msg()->FindBool(AUDIOMOVE_NAME_ISLAST, &isLastBuffer).IsError()) isLastBuffer = false;
 
-         FlatCountableRef fcRef;
-         if (msg()->FindFlat(AUDIOMOVE_NAME_BUF, fcRef).IsOK())
+         ByteBufferRef bufRef;
+         if (msg()->FindFlat(AUDIOMOVE_NAME_BUF, bufRef).IsOK())
          {
-            ByteBufferRef bufRef(fcRef.GetRefCountableRef(), true);
-            if (bufRef())
+            QString errStr;
+            ByteBufferRef newRef = ProcessBuffer(bufRef, errStr, isLastBuffer);
+            if (newRef() == NULL) 
             {
-               QString errStr;
-               ByteBufferRef newRef = ProcessBuffer(bufRef, errStr, isLastBuffer);
-               if (newRef() == NULL) 
-               {
-                  (void) msg()->RemoveName(AUDIOMOVE_NAME_BUF);
-                  if (errStr.length() > 0) (void) msg()->ReplaceString(true, AUDIOMOVE_NAME_STATUS, FromQ(errStr));
-               }
-               else if (newRef() != bufRef()) 
-               {
-                  FlatCountableRef fcRef(newRef.GetRefCountableRef(), true);
-                  (void) msg()->ReplaceFlat(true, AUDIOMOVE_NAME_BUF, fcRef);
-               }
+               (void) msg()->RemoveName(AUDIOMOVE_NAME_BUF);
+               if (errStr.length() > 0) (void) msg()->ReplaceString(true, AUDIOMOVE_NAME_STATUS, FromQ(errStr));
             }
+            else if (newRef() != bufRef()) (void) msg()->ReplaceFlat(true, AUDIOMOVE_NAME_BUF, newRef);
          }
          else if (isLastBuffer) CloseFile(CLOSE_FLAG_FINAL);
       }

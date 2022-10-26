@@ -361,7 +361,7 @@ protected:
             const char * e = GetAudioFormatExtensions(i);
             if (e)
             {
-               tStringTokenizer tok(e, ";;");
+               StringTokenizer tok(e, ";;");
                const char * nextExt;
                while((nextExt = tok()) != NULL)
                {
@@ -594,7 +594,7 @@ status_t AudioMoveItem :: SendBuffers(bool allowChangeStatus)
                if ((msg())&&(buf())&&(bufSamples>0)                                                               &&
                    ((bufSamples < _samplesLeft)||(msg()->AddBool(AUDIOMOVE_NAME_ISLAST, true)           .IsOK())) &&
                    (msg()->AddInt32(AUDIOMOVE_NAME_ORIGSIZE, bufSamples)                                .IsOK())  &&
-                   (msg()->AddFlat(AUDIOMOVE_NAME_BUF, FlatCountableRef(buf.GetRefCountableRef(), true)).IsOK())  &&
+                   (msg()->AddFlat(AUDIOMOVE_NAME_BUF, buf)                                             .IsOK())  &&
                    (input->MessageReceivedFromUpstream(msg)                                             .IsOK())) 
                {
                   _samplesLeft -= bufSamples;

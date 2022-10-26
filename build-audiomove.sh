@@ -80,7 +80,7 @@ export VORBISENC_LIBS='-L'$(pwd)'/../vorbis/temp_install/lib -lvorbisenc'
 export FLAC_CFLAGS='-I'$(pwd)'/../flac/temp_install/include'
 export FLAC_LIBS='-L'$(pwd)'/../flac/temp_install/lib -lflac'
 #touch_without_race_condition config* aclocal* Makefile*
-./autogen.sh
+autoreconf -vif
 ./configure --enable-shared=no --enable-external-libs --prefix=$(pwd)/temp_install
 make install
 popd

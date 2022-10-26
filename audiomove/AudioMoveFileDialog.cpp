@@ -24,6 +24,7 @@
 #include "audiomove/AudioMovePopupMenu.h"
 #include "audiomove/MiscFunctions.h"
 #include "system/SystemInfo.h"
+#include "util/TimeUtilityFunctions.h"
 
 namespace audiomove {
 

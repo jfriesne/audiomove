@@ -69,7 +69,7 @@ status_t ReadSettingsFile(const char * prefsPath, Message & settings)
          if (decompressedRef()) bufRef = decompressedRef;
 #endif
 
-         status_t ret = (bufRef()) ? settings.Unflatten(bufRef()->GetBuffer(), bufRef()->GetNumBytes()) : B_ERROR;
+         const status_t ret = settings.UnflattenFromByteBuffer(bufRef);
          (void) buf.ReleaseBuffer();  // the QByteArray class will free it so we need to not free it ourself
          return ret;
       }
@@ -79,10 +79,9 @@ status_t ReadSettingsFile(const char * prefsPath, Message & settings)
 
 status_t WriteSettingsFile(const char * prefsPath, const Message & settings, int compressionLevel)
 {
-   ByteBufferRef bufRef = GetByteBufferFromPool(settings.FlattenedSize());
+   ByteBufferRef bufRef = GetFlattenedByteBufferFromPool(settings);
    if (bufRef())
    {
-      settings.Flatten(bufRef()->GetBuffer());
       if (compressionLevel > 0)
       {
 #ifdef MUSCLE_ENABLE_ZLIB_ENCODING
