@@ -490,7 +490,7 @@ void AudioMoveItem :: Update(bool full)
       setText(MOVE_COLUMN_QUALITY,       _owner->GetConversionQualityName(conv->GetConversionQuality()));
       setText(MOVE_COLUMN_STATUS,        (_statusString.length() > 0) ? _statusString : _owner->GetStatusName(GetStatus()));
    }
-   char buf[64]; sprintf(buf, "%.01f%%", GetPercentDone()*100.0f);
+   char buf[64]; muscleSprintf(buf, "%.01f%%", GetPercentDone()*100.0f);
    setText(MOVE_COLUMN_PERCENT_DONE, ToQ(buf));
    static_cast<AudioMoveTreeWidget *>(treeWidget())->UpdateRow(this);
 }
@@ -1425,7 +1425,7 @@ QString AudioMoveWindow :: GetFileDurationName(int64 frames, uint32 samplesPerSe
       uint64 numSeconds = frames/samplesPerSecond;
       uint64 numMinutes = numSeconds/60;  numSeconds = numSeconds%60;
       uint64 numHours   = numMinutes/60;  numMinutes = numMinutes%60;
-      char buf[256]; sprintf(buf, UINT64_FORMAT_SPEC"h %02" UINT64_FORMAT_SPEC_NOPERCENT"m %02" UINT64_FORMAT_SPEC_NOPERCENT"s", numHours, numMinutes, numSeconds);
+      char buf[256]; muscleSprintf(buf, UINT64_FORMAT_SPEC"h %02" UINT64_FORMAT_SPEC_NOPERCENT"m %02" UINT64_FORMAT_SPEC_NOPERCENT"s", numHours, numMinutes, numSeconds);
       const char * s = buf;
       while((*s != '\0')&&(muscleInRange(*s, '1', '9') == false)) s++;
       return (*s ? ToQ(s) : ToQ("--"));
