@@ -1856,7 +1856,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
                {
                   _numInitializing--;
 
-                  MessageRef subMsg;
+                  ConstMessageRef subMsg;
                   for (int32 i=0; msg()->FindMessage(SETUP_NAME_SETUPRESULT, i, subMsg).IsOK(); i++)
                   {
                      RefCountableRef itag, otag;
@@ -1867,7 +1867,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
                         AudioMoveItem * ami = new AudioMoveItem(++_tagCounter, this, _processList, inputThread, AudioMoveThreadRef(new SampleRateThread(GetSampleRateValueFromCode(inputThread()->GetOutputFileSampleRate()), GetSampleRateValueFromCode(outputThread()->GetInputFileSampleRate()), quality, inputThread()->GetFileStreams())), outputThread);
                         if (_moveItems.Put(ami->GetTag(), ami).IsOK())
                         {
-                           String errorString; (void) subMsg()->FindString(SETUP_NAME_ERROR, errorString);
+                           const String errorString = subMsg()->GetString(SETUP_NAME_ERROR, errorString);
                            if (errorString.HasChars())
                            {
                               ami->SetStatus(MOVE_STATUS_ERROR);

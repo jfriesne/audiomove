@@ -351,7 +351,7 @@ void AudioMoveFileDialog :: LoadRecentListFromRegistry()
    if (LoadMessageFromRegistry((_fileCategory+"_recent")(), temp).IsOK())
    {
       // In the current format, each entry has its own sub-Message
-      MessageRef subMsg;
+      ConstMessageRef subMsg;
       for (int32 i=0; ((_recentFilesList.GetNumItems() < MAX_RECENT_FILES)&&(temp.FindMessage("recent", i, subMsg).IsOK())); i++)
       {
          if (_recentFilesList.AddTail().IsOK())
