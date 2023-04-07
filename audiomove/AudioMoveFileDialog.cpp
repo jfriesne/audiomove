@@ -430,8 +430,8 @@ void AudioMoveFileDialog :: SaveHotButtonsToRegistry() const
    Message temp;
    for (uint32 i=0; i<NUM_HOT_BUTTONS; i++)
    {
-      temp.AddString("hotlab", FromQ(_hotButtons[i]->text()));
-      temp.AddString("hotloc", _hotButtonDirs[i]);
+      (void) temp.AddString("hotlab", FromQ(_hotButtons[i]->text()));
+      (void) temp.AddString("hotloc", _hotButtonDirs[i]);
    }
    (void) SaveMessageToRegistry((_fileCategory+"_hot")(), temp);
 }
@@ -468,7 +468,7 @@ void AudioMoveFileDialog :: SaveSettingsToRegistry(const QStringList & qsl)
    {
       String s = LocalFromQ(qsl[i]);
       if (s.EndsWith(_autoSuffix) == false) s += _autoSuffix;
-      sl.AddTail(s);
+      (void) sl.AddTail(s);
    }
    sl.Sort();  // keep a well-defined order for easier comparisons
 
@@ -476,8 +476,8 @@ void AudioMoveFileDialog :: SaveSettingsToRegistry(const QStringList & qsl)
    // We take care to not let the list grow longer than MAX_RECENT_FILES, though.
    if (_recentFilesList.IndexOf(sl) < 0)
    {
-      while(_recentFilesList.GetNumItems() >= MAX_RECENT_FILES) _recentFilesList.RemoveHead();
-      _recentFilesList.AddTail(sl);
+      while(_recentFilesList.GetNumItems() >= MAX_RECENT_FILES) (void) _recentFilesList.RemoveHead();
+      (void) _recentFilesList.AddTail(sl);
    }
 
    UpdateRecentFilesTreeWidget();
@@ -486,7 +486,7 @@ void AudioMoveFileDialog :: SaveSettingsToRegistry(const QStringList & qsl)
 
    Message temp;
    (void) SaveWindowPositionToArchive(this, temp);
-   for (uint32 i=0; i<sl.GetNumItems(); i++) temp.AddString("path", sl[i]);
+   for (uint32 i=0; i<sl.GetNumItems(); i++) (void) temp.AddString("path", sl[i]);
    (void) SaveMessageToRegistry(_fileCategory(), temp);
 }
 
@@ -538,11 +538,11 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
 #endif
             {
                const Queue<String> & subList = GetFilePathsForItem(twi);
-               for (int32 j=subList.GetNumItems()-1; j>=0; j--) temp.Put(subList[j], true);
+               for (int32 j=subList.GetNumItems()-1; j>=0; j--) (void) temp.Put(subList[j], true);
             }
          }
          temp.SortByKey();
-         for (HashtableIterator<String, bool> iter(temp); iter.HasData(); iter++) sl.AddTail(iter.GetKey());
+         for (HashtableIterator<String, bool> iter(temp); iter.HasData(); iter++) (void) sl.AddTail(iter.GetKey());
       }
 
       NestCountGuard ncg(_fileHighlightedDisableCount);
@@ -582,7 +582,7 @@ Queue<String> AudioMoveFileDialog :: GetSelectedFilesList() const
 {
    Queue<String> ret;
    QStringList qsl = selectedFiles();
-   for (int32 i=0; i<qsl.count(); i++) ret.AddTail(LocalFromQ(qsl[i]));
+   for (int32 i=0; i<qsl.count(); i++) (void) ret.AddTail(LocalFromQ(qsl[i]));
    return ret;
 }
 
@@ -704,7 +704,7 @@ void AudioMoveFileDialog :: CheckForOverwrite(const QStringList & sl)
       if (alreadyExists.length() > 0)
       {
          MessageRef files = GetMessageFromPool();
-         for (int i=0; i<sl.size(); i++) files()->AddString("files", LocalFromQ(sl[i]));
+         for (int i=0; i<sl.size(); i++) (void) files()->AddString("files", LocalFromQ(sl[i]));
 
          QString textStr;
          if (overwriteCount == 1) textStr = tr("The file\n%1\n\nalready exists.\n\nAre you sure you want to replace it?").arg(alreadyExists);
@@ -812,7 +812,7 @@ void AudioMoveFileDialog :: HandleSelectedFilesChanged()
       NestCountGuard ncd(_recentFileDisableCount);
 
       Queue<String> sl;
-      for(int i=_lastSelectedFiles.size()-1; i>=0; i--) sl.AddHead(FromQ(_lastSelectedFiles[i]));
+      for(int i=_lastSelectedFiles.size()-1; i>=0; i--) (void) sl.AddHead(FromQ(_lastSelectedFiles[i]));
       sl.Sort();  // keep a well-defined order for easier comparisons
 
       // Make sure only the nth child is selected

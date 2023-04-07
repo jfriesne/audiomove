@@ -1086,7 +1086,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
 
          Hashtable<int32, int32> desiredOrder;
          int32 ci;
-         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, &ci).IsOK(); i++) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
+         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, &ci).IsOK(); i++) (void) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
          desiredOrder.SortByValue();
 
          for (HashtableIterator<int32,int32> iter(desiredOrder, HTIT_FLAG_BACKWARDS); iter.HasData(); iter++) h->moveSection(h->visualIndex(iter.GetKey()), 0);
@@ -1197,28 +1197,27 @@ AudioMoveWindow :: ~AudioMoveWindow()
       const QHeaderView * h = _processList->header();
       for (int i=0; i<h->count(); i++)
       {
-         settingsMsg.AddInt32("amw_colw", h->sectionSize(i));
-         settingsMsg.AddInt32("amw_coli", h->visualIndex(i));
-         settingsMsg.AddBool("amw_colh", h->isSectionHidden(i));
+         (void) settingsMsg.AddInt32("amw_colw", h->sectionSize(i));
+         (void) settingsMsg.AddInt32("amw_coli", h->visualIndex(i));
+         (void) settingsMsg.AddBool("amw_colh", h->isSectionHidden(i));
       }
 
-      int sc = _processList->sortColumn();
-      if (sc >= 0) settingsMsg.AddInt32("amw_sc", sc);
+      const int sc = _processList->sortColumn();
+      if (sc >= 0) (void) settingsMsg.AddInt32("amw_sc", sc);
 
-      settingsMsg.AddInt32("amw_so", h->sortIndicatorOrder());
+      (void) settingsMsg.AddInt32("amw_so", h->sortIndicatorOrder());
    }
 
-   settingsMsg.AddString("amw_dest",   GetDestination());
-   settingsMsg.AddInt32("amw_tformat", GetTargetFormat());
-   settingsMsg.AddInt32("amw_trate",   GetTargetSampleRate());
-   settingsMsg.AddInt32("amw_twidth",  GetTargetSampleWidth());
-   settingsMsg.AddInt32("amw_qual",    GetConversionQuality());
-   settingsMsg.AddInt32("amw_maxp",    GetMaxProcesses());
-   settingsMsg.AddBool("amw_split",    GetSplitMultiTrackFiles());
-   settingsMsg.AddString("amw_afd",    LocalFromQ(_addFilesDir));
-   settingsMsg.AddBool("amw_ipc",      GetInPlaceConversions());
-   settingsMsg.AddBool("amw_cow",      GetConfirmOverwrites());
-
+   (void) settingsMsg.AddString("amw_dest",   GetDestination());
+   (void) settingsMsg.AddInt32("amw_tformat", GetTargetFormat());
+   (void) settingsMsg.AddInt32("amw_trate",   GetTargetSampleRate());
+   (void) settingsMsg.AddInt32("amw_twidth",  GetTargetSampleWidth());
+   (void) settingsMsg.AddInt32("amw_qual",    GetConversionQuality());
+   (void) settingsMsg.AddInt32("amw_maxp",    GetMaxProcesses());
+   (void) settingsMsg.AddBool("amw_split",    GetSplitMultiTrackFiles());
+   (void) settingsMsg.AddString("amw_afd",    LocalFromQ(_addFilesDir));
+   (void) settingsMsg.AddBool("amw_ipc",      GetInPlaceConversions());
+   (void) settingsMsg.AddBool("amw_cow",      GetConfirmOverwrites());
    (void) SaveMessageToRegistry("audiomove", settingsMsg);
 }
 
@@ -1765,7 +1764,7 @@ void AudioMoveWindow :: ForceUpdateAll()
 
 void AudioMoveWindow :: DeleteAudioMoveItem(uint32 nextKey, AudioMoveItem * next)
 {
-   _moveItems.Remove(nextKey);
+   (void) _moveItems.Remove(nextKey);
    (void) _pendingConfirmations.Remove(next);
    delete next;
 }
@@ -1898,7 +1897,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
                   AudioMoveItem * item;
                   if (_moveItems.Get(msg()->what, item).IsOK())
                   {
-                     item->MessageReceivedFromUpstream(msg);
+                     (void) item->MessageReceivedFromUpstream(msg);
                      if (item->GetStatus() != MOVE_STATUS_PROCESSING) DequeueTransfers();
                   }
                }

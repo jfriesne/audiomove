@@ -120,8 +120,8 @@ QAction * AudioMovePopupMenu :: InsertItem(const QString & text, int id, bool is
    act->setCheckable(isCheckable);
    act->setChecked(isChecked);
 
-   _actionToID.Put(act, id);
-   if (_idToAction.ContainsKey(id) == false) _idToAction.Put(id, act);
+   (void) _actionToID.Put(act, id);
+   if (_idToAction.ContainsKey(id) == false) (void) _idToAction.Put(id, act);
    addAction(act);
    return act;
 }

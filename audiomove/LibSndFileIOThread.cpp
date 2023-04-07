@@ -301,7 +301,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
             int32 readSamples = sf_read_float(file, samples, numSamples);
             if (sf_error(file) == SF_ERR_NO_ERROR)
             {
-               buf()->SetNumBytes(readSamples*sizeof(float), true);
+               MRETURN_ON_ERROR(buf()->SetNumBytes(readSamples*sizeof(float), true));
                if (isLastBuffer)
                {
                   _isComplete = true;
@@ -324,7 +324,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                {
                   // Whoops!  We need to rescale everything down a bit, or we'll suffer from clipping!
                   _currentMaxOutputSample = maxSampleValue;
-                  _maxSamplesRecord.Put(_numFrames, _currentMaxOutputSample);
+                  MRETURN_ON_ERROR(_maxSamplesRecord.Put(_numFrames, _currentMaxOutputSample));
                }
                RescaleAudioBuffer(samples, numSamples, 1.0f/_currentMaxOutputSample);
             }
@@ -553,8 +553,8 @@ status_t LibSndFileIOThread :: DoSeekFiles(uint64 offset)
 
 void LibSndFileIOThread :: DoCloseFiles(uint32 closeFlags)
 {
-   bool isFinal = ((closeFlags & CLOSE_FLAG_FINAL) != 0);
-   bool isError = ((closeFlags & CLOSE_FLAG_ERROR) != 0);
+   const bool isFinal = ((closeFlags & CLOSE_FLAG_FINAL) != 0);
+   const bool isError = ((closeFlags & CLOSE_FLAG_ERROR) != 0);
    for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
    {
       // close the file FIRST to avoid any file-locking problems in Windows, etc
@@ -568,13 +568,13 @@ void LibSndFileIOThread :: DoCloseFiles(uint32 closeFlags)
          if (isError == false)
          {
             // Success!  We want to safely replace the old/original file with our new temp file
-            int32 suffixIdx = tmpFileName.LastIndexOf(AUDIOMOVE_TEMP_SUFFIX);
+            const int32 suffixIdx = tmpFileName.LastIndexOf(AUDIOMOVE_TEMP_SUFFIX);
             if (suffixIdx >= 0)
             {
-               String origFileName = tmpFileName.Substring(0, suffixIdx);
+               const String origFileName = tmpFileName.Substring(0, suffixIdx);
                (void) unlink(origFileName());
                (void) rename(tmpFileName(), origFileName());
-               _tempFiles.Remove(tmpFileName);
+               (void) _tempFiles.Remove(tmpFileName);
 
                // For in-place operations where we split a file, be sure to delete the original/unsplit file also
                if ((_splitFiles)&&(_numWriteStreams > 1)&&(_optInPlaceBasePath.HasChars()))

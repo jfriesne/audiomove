@@ -44,7 +44,7 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
          if (OpenFile().IsError())
          {
             char buf[128]; muscleSprintf(buf, "Couldn't open %s file", IsOutput() ? "output" : "input");
-            msg()->AddString(AUDIOMOVE_NAME_STATUS, buf);
+            (void) msg()->AddString(AUDIOMOVE_NAME_STATUS, buf);
          }
       }
       else
@@ -66,7 +66,7 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
          }
          else if (isLastBuffer) CloseFile(CLOSE_FLAG_FINAL);
       }
-      if (_downstreamAcceptor) _downstreamAcceptor->MessageReceivedFromUpstream(msg);
+      if (_downstreamAcceptor) (void) _downstreamAcceptor->MessageReceivedFromUpstream(msg);
       return B_NO_ERROR;
    }
    else return B_ERROR;

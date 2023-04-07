@@ -143,7 +143,7 @@ int32 SampleRateThread::GenerateNextBlock(float * outBuffer, uint32 outBufferFra
       _inputFrame  += _data.input_frames_used;
       if ((_inputFrame*_numStreams*sizeof(float)) == bb.GetNumBytes())
       {
-         _inputBuffers.RemoveHead();
+         (void) _inputBuffers.RemoveHead();
          _inputFrame = 0;
       }
       return _data.output_frames_gen;

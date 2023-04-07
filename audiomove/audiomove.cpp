@@ -63,12 +63,12 @@ int main(int argc, char ** argv)
 #endif
       if (strcmp(argv[i], "disable_bwf") == 0)  // except this one
       {
-         args.AddString("disable_bwf", "");
+         (void) args.AddString("disable_bwf", "");
          argv[i] = NULL;
       }
       else if (strchr(argv[i], '=') == NULL)
       {
-         args.AddString("file", argv[i]);
+         (void) args.AddString("file", argv[i]);
          argv[i] = NULL;
       }
    }
