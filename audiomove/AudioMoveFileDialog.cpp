@@ -67,7 +67,7 @@ enum {
    NUM_RECENT_FILE_COLUMNS,
 };
 
-AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QString & filter, QFileDialog::FileMode mode, QWidget * parent) : QFileDialog(parent), _fileCategory(fileCategory.Prepend("dir_")), _lastHotkeySelectTime(0), _prevHotkeySelection(NULL), _directoryChangeCheckPending(false)
+AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QString & filter, QFileDialog::FileMode mode, QWidget * parent) : QFileDialog(parent), _fileCategory(fileCategory.WithPrepend("dir_")), _lastHotkeySelectTime(0), _prevHotkeySelection(NULL), _directoryChangeCheckPending(false)
 {
    QStringList filters;
    if (filter != QString()) filters.push_back(filter);
@@ -75,7 +75,7 @@ AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QS
    DoInit(mode, filters);
 }
 
-AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QStringList & filters, QFileDialog::FileMode mode, QWidget * parent) : QFileDialog(parent), _fileCategory(fileCategory.Prepend("dir_")), _lastHotkeySelectTime(0), _prevHotkeySelection(NULL), _directoryChangeCheckPending(false)
+AudioMoveFileDialog :: AudioMoveFileDialog(const String & fileCategory, const QStringList & filters, QFileDialog::FileMode mode, QWidget * parent) : QFileDialog(parent), _fileCategory(fileCategory.WithPrepend("dir_")), _lastHotkeySelectTime(0), _prevHotkeySelection(NULL), _directoryChangeCheckPending(false)
 {
    QStringList f;
    for (int i=0; i<filters.size(); i++) f.push_back(filters[i]);
@@ -559,7 +559,7 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
             {
                String fileName = sl[i].Substring("/");
                if (files.HasChars()) files += ' ';
-               if (sl.GetNumItems() > 1) fileName = fileName.Prepend("\"").Append("\"");
+               if (sl.GetNumItems() > 1) fileName = fileName.WithPrepend("\"").WithAppend("\"");
                files += fileName;
             }
             if (dir.HasChars())
