@@ -627,7 +627,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
          if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, &osize).IsOK())) _samplesComplete += osize;
          else
          {
-            if (_totalSamples > 0) SetStatus((_totalSamples>0)?MOVE_STATUS_ERROR:MOVE_STATUS_COMPLETE);
+            if (_totalSamples > 0) SetStatus(MOVE_STATUS_ERROR);
             ShutdownInternalThreads();
          }
       }
@@ -654,7 +654,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
 class AudioMoveTreeItemDelegate : public QItemDelegate
 {
 public:
-   AudioMoveTreeItemDelegate(AudioMoveTreeWidget * tree, QObject * parent) : QItemDelegate(parent), _tree(tree) {/* empty */}
+   AudioMoveTreeItemDelegate(AudioMoveTreeWidget * tree, QObject * parent) : QItemDelegate(parent), _tree(tree), _paintingRow(-1), _paintingCol(-1), _isSelected(false) {/* empty */}
 
    virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
    {
@@ -1866,7 +1866,7 @@ bool AudioMoveWindow :: event(QEvent * evt)
                         AudioMoveItem * ami = new AudioMoveItem(++_tagCounter, this, _processList, inputThread, AudioMoveThreadRef(new SampleRateThread(GetSampleRateValueFromCode(inputThread()->GetOutputFileSampleRate()), GetSampleRateValueFromCode(outputThread()->GetInputFileSampleRate()), quality, inputThread()->GetFileStreams())), outputThread);
                         if (_moveItems.Put(ami->GetTag(), ami).IsOK())
                         {
-                           const String errorString = subMsg()->GetString(SETUP_NAME_ERROR, errorString);
+                           const String errorString = subMsg()->GetString(SETUP_NAME_ERROR);
                            if (errorString.HasChars())
                            {
                               ami->SetStatus(MOVE_STATUS_ERROR);

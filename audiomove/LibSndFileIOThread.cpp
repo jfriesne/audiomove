@@ -32,12 +32,13 @@ static const String AUDIOMOVE_TEMP_SUFFIX = ".audiomove_temp";
 
 LibSndFileIOThread :: LibSndFileIOThread(const String & readPath) : _fileName(readPath), _numWriteStreams(AUDIO_STREAMS_SOURCE), _splitFiles(false), _inputFileFormat(AUDIO_FORMAT_SOURCE), _outputFileFormat(AUDIO_FORMAT_NORMALIZED), _fileSampleRate(AUDIO_RATE_SOURCE), _fileSampleWidth(AUDIO_WIDTH_SOURCE), _numFrames(0), _numStreams(0), _isComplete(false), _currentMaxOutputSample(1.0f/DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE), _biValid(false)
 {
-   // empty
+   memset(&_bi, 0, sizeof(_bi));
 }
 
 LibSndFileIOThread :: LibSndFileIOThread(const String & checkPath, const String & writePath, const String & optInPlaceBasePath, uint32 writeFormat, uint32 writeSampleWidth, uint32 writeSampleRate, uint8 writeNumStreams, bool splitFiles, const SF_BROADCAST_INFO * optBI) : _checkPath(checkPath), _fileName(writePath), _optInPlaceBasePath(optInPlaceBasePath), _numWriteStreams(writeNumStreams), _splitFiles(splitFiles), _inputFileFormat(AUDIO_FORMAT_NORMALIZED), _outputFileFormat(writeFormat), _fileSampleRate(writeSampleRate), _fileSampleWidth(writeSampleWidth), _numFrames(0), _numStreams(writeNumStreams), _isComplete(false), _currentMaxOutputSample(1.0f/DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE), _biValid(optBI != NULL)
 {
    if (_biValid) memcpy(&_bi, optBI, sizeof(_bi));
+            else memset(&_bi, 0,     sizeof(_bi));
 }
 
 LibSndFileIOThread :: ~LibSndFileIOThread()
@@ -157,7 +158,7 @@ status_t LibSndFileIOThread :: OpenFile()
                case SF_FORMAT_AIFF:   _inputFileFormat = AUDIO_FORMAT_AIFF;      break;
                case SF_FORMAT_FLAC:   _inputFileFormat = AUDIO_FORMAT_FLAC;      break;
                case SF_FORMAT_VORBIS: _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
-               case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE;
+               case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE; break;
                case SF_FORMAT_W64:    _inputFileFormat = AUDIO_FORMAT_WAV64;     break;
                case SF_FORMAT_CAF:    _inputFileFormat = AUDIO_FORMAT_CAF;       break;
                case SF_FORMAT_RF64:   _inputFileFormat = AUDIO_FORMAT_RF64;      break;

@@ -5,13 +5,13 @@
 
 namespace audiomove {
 
-AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, QWidget * parent) : QMessageBox(parent), _autoDelete(autoDelete), _signalEmitted(true)
+AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, QWidget * parent) : QMessageBox(parent), _autoDelete(autoDelete), _signalEmitted(true), _objectType(0), _objectID(0)
 {
    EnableHackFixForFogBugz15263();
    if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(int, const muscle::MessageRef &, int, int)), target, slotName);
 }
 
-AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, int button0, int button1, int button2, QWidget * parent, WindowFlags flags) : QMessageBox(caption, text, icon, button0, button1, button2, parent, flags), _autoDelete(autoDelete), _signalEmitted(true)
+AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, int button0, int button1, int button2, QWidget * parent, WindowFlags flags) : QMessageBox(caption, text, icon, button0, button1, button2, parent, flags), _autoDelete(autoDelete), _signalEmitted(true), _objectType(0), _objectID(0)
 {
    EnableHackFixForFogBugz15263();
    if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(int, const muscle::MessageRef &, int, int)), target, slotName);

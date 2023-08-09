@@ -23,9 +23,9 @@
 
 namespace audiomove {
 
-SampleRateThread :: SampleRateThread(uint32 inputRate, uint32 outputRate, uint32 quality, uint8 numStreams) : _inputRate(inputRate), _outputRate(outputRate), _quality(quality), _numStreams(numStreams), _codec(NULL)
+SampleRateThread :: SampleRateThread(uint32 inputRate, uint32 outputRate, uint32 quality, uint8 numStreams) : _inputRate(inputRate), _outputRate(outputRate), _quality(quality), _numStreams(numStreams), _inputFrame(0), _availFrames(0), _codec(NULL)
 {
-   // empty
+   memset(&_data, 0, sizeof(_data));
 }
 
 SampleRateThread :: ~SampleRateThread()

@@ -9,7 +9,7 @@
 
 namespace audiomove {
 
-AudioMovePopupMenu :: AudioMovePopupMenu(bool autoDelete, QObject * target, const char * slotName, QWidget * parent) : QMenu(parent), _goCalled(false), _autoDelete(autoDelete), _signalEmissionPending(false), _submenusAdded(false), _singleShotPending(false)
+AudioMovePopupMenu :: AudioMovePopupMenu(bool autoDelete, QObject * target, const char * slotName, QWidget * parent) : QMenu(parent), _goCalled(false), _autoDelete(autoDelete), _signalEmissionPending(false), _submenusAdded(false), _singleShotPending(false), _objectType(0), _objectID(0)
 {
    if ((target)&&(slotName)) connect(this, SIGNAL(PopupMenuResult(int,int,int,QAction *)), target, slotName);
    connect(this, SIGNAL(triggered(QAction *)), this, SLOT(ActionTriggered(QAction *)));

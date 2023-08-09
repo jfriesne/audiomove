@@ -221,7 +221,7 @@ void AudioMoveFileDialog :: DoInit(QFileDialog::FileMode mode, const QStringList
       h->setStretchLastSection(false);
 
       QTreeWidgetItem * temp = new QTreeWidgetItem(_recentFilesTreeWidget);  // necessary for sizeHintForRow(0) to give us a valid result
-      int recentHeight = h->sizeHint().height()+(_recentFilesTreeWidget->sizeHintForRow(0)*MAX_RECENT_FILES+5);
+      const int recentHeight = h->sizeHint().height()+(_recentFilesTreeWidget->sizeHintForRow(0)*MAX_RECENT_FILES+5);
       _recentFilesTreeWidget->setRootIsDecorated(false);
       _recentFilesTreeWidget->setFixedHeight(recentHeight);
       delete temp;
