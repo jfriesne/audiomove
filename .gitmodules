@@ -19,3 +19,9 @@
 [submodule "submodules/opus"]
 	path = submodules/opus
 	url = https://github.com/xiph/opus.git
+[submodule "submodules/lame"]
+	path = submodules/lame
+	url = https://github.com/lameproject/lame.git
+[submodule "submodules/mpg123"]
+	path = submodules/mpg123
+	url = https://github.com/madebr/mpg123
