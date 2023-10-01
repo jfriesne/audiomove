@@ -41,6 +41,13 @@ bool DoesFormatSupportSampleWidth(uint32 format, uint32 sampleWidth);
   */
 bool DoesFormatSupportSampleWidths(uint32 fileFormat);
 
+/** Returns true iff we can open files of this format in read/write mode in order to edit/update
+  * them.  Returns false for formats that only support read-only xor write-only modes.
+  * @param an AUDIO_FORMAT_* value
+  * @returns true iff the format supports read-write mode
+  */
+bool DoesFormatSupportReadWriteMode(uint32 fileFormat);
+
 /** Returns a string containing semicolon-separated filename extensions associated
   * with the given audio format (e.g. ".aiff;.aif" for AUDIO_FORMAT_AIFF.  If none
   * are known, an empty string ("") is returned.

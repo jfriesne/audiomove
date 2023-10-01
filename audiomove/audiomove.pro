@@ -1,5 +1,19 @@
 CONFIG     += qt warn_on release thread rtti link_prl
 
+FLAGSDIR=.
+
+exists($$FLAGSDIR/enable_sanitizer) {
+   warning("enable_sanitizer file detected:  Enabling clang sanitizer flags")
+   QMAKE_CXXFLAGS += -fsanitize=address,undefined -g
+   QMAKE_LFLAGS   += -fsanitize=address,undefined
+}
+
+exists($$FLAGSDIR/enable_thread_sanitizer) {
+   warning("enable_thread_sanitizer file detected:  Enabling clang thread-sanitizer flags")
+   QMAKE_CXXFLAGS += -fsanitize=thread -g
+   QMAKE_LFLAGS   += -fsanitize=thread
+}
+
 greaterThan(QT_MAJOR_VERSION, 4) {
    QT += widgets
 }

@@ -53,6 +53,19 @@ bool DoesFormatSupportSampleWidth(uint32 format, uint32 sampleWidth)
 {
    switch(format)
    {
+      case AUDIO_FORMAT_CAF_ALAC:
+         switch(sampleWidth)
+         {
+            case AUDIO_WIDTH_INT24:
+            case AUDIO_WIDTH_INT16:
+            case AUDIO_WIDTH_INT32:
+               return true;  // ALAC also supports 20 bits per sample, but AudioMove currently doesn't so we'll ignore that
+
+            default:
+               return false;
+         }
+      break;
+
       case AUDIO_FORMAT_FLAC: case AUDIO_FORMAT_PAF_LE: case AUDIO_FORMAT_PAF_BE:
          switch(sampleWidth)
          {
@@ -87,6 +100,22 @@ bool DoesFormatSupportSampleWidths(uint32 fileFormat)
    }
 }
 
+bool DoesFormatSupportReadWriteMode(uint32 fileFormat)
+{
+   switch(fileFormat)
+   {
+      case AUDIO_FORMAT_FLAC:
+      case AUDIO_FORMAT_CAF_ALAC:
+      case AUDIO_FORMAT_OGGVORBIS:
+      case AUDIO_FORMAT_OGGOPUS:
+      case AUDIO_FORMAT_MP3:
+         return false;  // lossy compression and read-write mode generally don't mix
+
+      default:
+         return true;
+   }
+}
+
 const char * GetAudioFormatFileNameExtensions(uint32 format)
 {
    switch(format)
@@ -100,6 +129,7 @@ const char * GetAudioFormatFileNameExtensions(uint32 format)
       case AUDIO_FORMAT_PAF_LE:    return ".paf";
       case AUDIO_FORMAT_WAV64:     return ".w64";
       case AUDIO_FORMAT_CAF:       return ".caf";
+      case AUDIO_FORMAT_CAF_ALAC:  return ".caf";  // we're storing ALAC data in a CAF container for now (because that's what libsndfile's example code does)
       case AUDIO_FORMAT_RF64:      return ".rf64";
       case AUDIO_FORMAT_OGGOPUS:   return ".opus";
       default:                     return "";
@@ -120,6 +150,7 @@ const char * GetAudioFormatName(uint32 format)
       case AUDIO_FORMAT_PAF_LE:     return ".PAF (L.E.)";
       case AUDIO_FORMAT_WAV64:      return ".W64";
       case AUDIO_FORMAT_CAF:        return ".CAF";
+      case AUDIO_FORMAT_CAF_ALAC:   return ".CAF (ALAC)";
       case AUDIO_FORMAT_RF64:       return ".RF64";
       case AUDIO_FORMAT_OGGOPUS:    return ".OPUS";
       case AUDIO_FORMAT_NORMALIZED: return "Normalized";

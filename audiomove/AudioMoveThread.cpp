@@ -41,10 +41,10 @@ status_t AudioMoveThread :: MessageReceivedFromOwner(const MessageRef & msg, uin
    {
       if (msg()->HasName(AUDIOMOVE_NAME_OPENFILE))
       {
-         if (OpenFile().IsError())
+         status_t ret;
+         if (OpenFile().IsError(ret))
          {
-            char buf[128]; muscleSprintf(buf, "Couldn't open %s file", IsOutput() ? "output" : "input");
-            (void) msg()->AddString(AUDIOMOVE_NAME_STATUS, buf);
+            (void) msg()->AddString(AUDIOMOVE_NAME_STATUS, String("Couldn't open %1 file [%2]").Arg(IsOutput() ? "output" : "input").Arg(ret()));
          }
       }
       else

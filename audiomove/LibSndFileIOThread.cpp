@@ -58,6 +58,7 @@ status_t LibSndFileIOThread :: OpenFile()
 {
    CloseFile(CLOSE_FLAG_FINAL);  // paranoia
 
+   status_t ret;
    SF_INFO info; memset(&info, 0, sizeof(info));
    if (_numWriteStreams != AUDIO_STREAMS_SOURCE)
    {
@@ -72,6 +73,18 @@ status_t LibSndFileIOThread :: OpenFile()
          case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;            break;
          case AUDIO_FORMAT_MP3:  info.format = SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III; break;
          case AUDIO_FORMAT_FLAC: info.format = SF_FORMAT_FLAC;                            break;
+
+         case AUDIO_FORMAT_CAF_ALAC:
+         {
+            switch(_fileSampleWidth)
+            {
+               case AUDIO_WIDTH_INT16: info.format = SF_FORMAT_CAF | SF_FORMAT_ALAC_16; break;
+               // 20-bit support could go here via AUDIO_WIDTH_INT20, but it's not implemented for now
+               case AUDIO_WIDTH_INT24: info.format = SF_FORMAT_CAF | SF_FORMAT_ALAC_24; break;
+               case AUDIO_WIDTH_INT32: info.format = SF_FORMAT_CAF | SF_FORMAT_ALAC_32; break;
+            }
+         }
+         break;
 
          case AUDIO_FORMAT_OGGVORBIS:
             info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
@@ -90,7 +103,7 @@ status_t LibSndFileIOThread :: OpenFile()
             return B_ERROR("Unsupported Output file format");  // we only support the above-listed audio formats for output... for now anyway
       }
 
-      if (DoesFormatSupportSampleWidths(_outputFileFormat))
+      if ((DoesFormatSupportSampleWidths(_outputFileFormat))&&(_outputFileFormat != AUDIO_FORMAT_CAF_ALAC)&&(_outputFileFormat != AUDIO_FORMAT_MP3))  // CAF_ALAC and MP3 already set their subtypes above
       {
          switch(_fileSampleWidth)
          {
@@ -129,23 +142,27 @@ status_t LibSndFileIOThread :: OpenFile()
           for (uint32 i=0; i<_numWriteStreams; i++)
           {
              String fileName = (lastDot>=0) ? (_fileName.Substring(0, lastDot)+String("_c%1").Arg(i+1)+_fileName.Substring(lastDot)) : (_fileName+String("_c%1").Arg(i+1));
-             SNDFILE * file = OpenFileForWriting(fileName, info);  // don't merge into the PutOutputFile() call!  This may change (fileName)!
-             if (PutOutputFile(fileName, file).IsError()) break;
+             SNDFILE * file = NULL;
+             const status_t oRet = OpenFileForWriting(fileName, info, file);  // don't merge into the PutOutputFile() call!  This may change (fileName)!
+             ret |= oRet;
+             if ((oRet.IsOK())&&(PutOutputFile(fileName, file).IsError(ret))) break;
           }
           if (_files.GetNumItems() == _numWriteStreams)
           {
              _numFrames = 0;  // no data written, yet!
-             return B_NO_ERROR;
+             return ret;
           }
       }
       else
       {
          String fn = _fileName;
-         SNDFILE * file = OpenFileForWriting(fn, info);  // don't merge into the PutOutputFile() call!  This may change (fn)!
-         if (PutOutputFile(fn, file).IsOK())
+         SNDFILE * file = NULL;
+         const status_t oRet = OpenFileForWriting(fn, info, file);  // don't merge into the PutOutputFile() call!  This may change (fn)!
+         ret |= oRet;
+         if ((oRet.IsOK())&&(PutOutputFile(fn, file).IsOK(ret)))
          {
             _numFrames = 0;  // no data written, yet!
-            return B_NO_ERROR;
+            return ret;
          }
       }
    }
@@ -156,25 +173,24 @@ status_t LibSndFileIOThread :: OpenFile()
       {
          if (_files.Put(_fileName, file).IsOK())
          {
+            _fileSampleRate  = info.samplerate;
+            _fileSampleWidth = NUM_AUDIO_WIDTHS;  // default (will hopefully be set better below)
+            _numFrames       = info.frames;
+            _numStreams      = info.channels;
+
             // Read mode:  extract attributes from libsndfile
             switch(info.format & SF_FORMAT_TYPEMASK)
             {
-               case SF_FORMAT_WAV:    _inputFileFormat = AUDIO_FORMAT_WAV;       break;
-               case SF_FORMAT_AIFF:   _inputFileFormat = AUDIO_FORMAT_AIFF;      break;
-               case SF_FORMAT_MPEG:   _inputFileFormat = AUDIO_FORMAT_MP3;       break;
-               case SF_FORMAT_FLAC:   _inputFileFormat = AUDIO_FORMAT_FLAC;      break;
-               case SF_FORMAT_VORBIS: _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
-               case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE; break;
-               case SF_FORMAT_W64:    _inputFileFormat = AUDIO_FORMAT_WAV64;     break;
-               case SF_FORMAT_CAF:    _inputFileFormat = AUDIO_FORMAT_CAF;       break;
-               case SF_FORMAT_RF64:   _inputFileFormat = AUDIO_FORMAT_RF64;      break;
-               case SF_FORMAT_OPUS:   _inputFileFormat = AUDIO_FORMAT_OGGOPUS;   break;
-               default:               _inputFileFormat = NUM_AUDIO_FORMATS;      break; // must be some other format that libsndfile knows, but we don't!
+               case SF_FORMAT_WAV:  _inputFileFormat = AUDIO_FORMAT_WAV;   break;
+               case SF_FORMAT_AIFF: _inputFileFormat = AUDIO_FORMAT_AIFF;  break;
+               case SF_FORMAT_MPEG: _inputFileFormat = AUDIO_FORMAT_MP3;   break;
+               case SF_FORMAT_FLAC: _inputFileFormat = AUDIO_FORMAT_FLAC;  break;
+               case SF_FORMAT_PAF:  _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE; break;
+               case SF_FORMAT_W64:  _inputFileFormat = AUDIO_FORMAT_WAV64; break;
+               case SF_FORMAT_CAF:  _inputFileFormat = AUDIO_FORMAT_CAF;   break;
+               case SF_FORMAT_RF64: _inputFileFormat = AUDIO_FORMAT_RF64;  break;
+               default:             _inputFileFormat = NUM_AUDIO_FORMATS;  break; // must be some other format that libsndfile knows, but we don't!
             }
-
-            _fileSampleRate = info.samplerate;
-            _numFrames      = info.frames;
-            _numStreams     = info.channels;
 
             switch(info.format & SF_FORMAT_SUBMASK)
             {
@@ -188,18 +204,34 @@ status_t LibSndFileIOThread :: OpenFile()
                   _fileSampleWidth = AUDIO_WIDTH_INT8;
                break;
 
+               case SF_FORMAT_OPUS:    _inputFileFormat = AUDIO_FORMAT_OGGOPUS;   break;
+               case SF_FORMAT_VORBIS:  _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
+
+               case SF_FORMAT_ALAC_16: case SF_FORMAT_ALAC_20: case SF_FORMAT_ALAC_24: case SF_FORMAT_ALAC_32:
+               {
+                  if (_inputFileFormat == AUDIO_FORMAT_CAF) _inputFileFormat = AUDIO_FORMAT_CAF_ALAC;
+                  switch(info.format & SF_FORMAT_SUBMASK)
+                  {
+                     case SF_FORMAT_ALAC_16: _fileSampleWidth = AUDIO_WIDTH_INT16;     break;
+                     case SF_FORMAT_ALAC_20: /*_fileSampleWidth = AUDIO_WIDTH_INT20;*/ break;  // AUDIO_WIDTH_INT20 not implemented for now
+                     case SF_FORMAT_ALAC_24: _fileSampleWidth = AUDIO_WIDTH_INT24;     break;
+                     case SF_FORMAT_ALAC_32: _fileSampleWidth = AUDIO_WIDTH_INT32;     break;
+                  }
+               }
+               break;
+
                default:
-                  _fileSampleWidth = NUM_AUDIO_WIDTHS;
+                  // empty
                break;
             }
-            return B_NO_ERROR;
+            return ret;
          }
          else sf_close(file);  // don't remove it, it was only opened for reading!
       }
    }
    CloseFile(CLOSE_FLAG_ERROR);
 
-   return B_ERROR;
+   return ret | B_ERROR;
 }
 
 status_t LibSndFileIOThread :: PutOutputFile(const String & fn, SNDFILE * file)
@@ -278,23 +310,15 @@ status_t LibSndFileIOThread :: RescaleAudioSegment(uint64 startOffset, uint64 nu
 
 bool LibSndFileIOThread :: IsOkayToRescale() const
 {
-   switch(_outputFileFormat)
-   {
-      case AUDIO_FORMAT_FLAC:
-      case AUDIO_FORMAT_OGGVORBIS:
-      case AUDIO_FORMAT_OGGOPUS:
-      case AUDIO_FORMAT_MP3:
-         return false;  // These audio formats don't support seeking while in write mode, so we can't rescale them
+   if (DoesFormatSupportReadWriteMode(_outputFileFormat) == false) return false;
 
-      default:
-         // No need to rescale if our samples are floating point, since they can't clip anyway
-         if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
+   // No need to rescale if our samples are floating point, since they can't clip anyway
+   if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
 
-         // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
-         if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;
+   // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
+   if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;
 
-         return true;
-   }
+   return true;
 }
 
 ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QString & retErrStr, bool isLastBuffer)
@@ -391,7 +415,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
    return ByteBufferRef();  // error!
 }
 
-SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const SF_INFO & info) const
+status_t LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const SF_INFO & info, SNDFILE * & retFile) const
 {
    // Try to find a temp-file name that doesn't already exist in the output folder
    String fileName = userFileName + AUDIOMOVE_TEMP_SUFFIX;
@@ -418,7 +442,7 @@ SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const 
                }
             }
          }
-         if (okayToGo == false) return NULL;  // couldn't find a free temp file name!?
+         if (okayToGo == false) return B_ERROR("Unable to choose temp-file name");  // couldn't find a free temp file name!?
       }
    }
    userFileName = fileName;
@@ -434,6 +458,8 @@ SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const 
       file = sf_open(fileName(), openMode, &tempInfo);
    }
 
+   if ((file == NULL)&&(sf_format_check(&tempInfo) != SF_TRUE)) return B_ERROR("Unsupported Channel Count or Sample Rate");
+
    // If we have a valid broadcast-info chunk, try to write it to the file
    if ((_biValid)&&(file))
    {
@@ -443,7 +469,9 @@ SNDFILE * LibSndFileIOThread :: OpenFileForWriting(String & userFileName, const 
       // version of libsndfile to come out (I've emailed Erik about the problem)
       (void) sf_command(file, SFC_SET_BROADCAST_INFO, (void *) &_bi, sizeof(_bi));
    }
-   return file;
+
+   retFile = file;
+   return B_NO_ERROR;
 }
 
 status_t LibSndFileIOThread :: GetFilesThatWillBeOverwritten(Message & msg, const String & fn)

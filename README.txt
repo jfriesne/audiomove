@@ -136,6 +136,7 @@ History
 v1.24
                  - Updated all submodules to the latest versions.
                  - Added support for reading and writing MP3 audio format.
+                 - Added support for reading and writing CAF+ALAC audio format.
                  - Fixed a bug that caused destination folders with spaces in the path to not be usable.
 
 v1.23 5/28/2021  - Updated all the submodules to the latest/current versions

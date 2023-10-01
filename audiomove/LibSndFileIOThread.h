@@ -76,7 +76,7 @@ protected:
 private:
    status_t RescaleAudioSegment(uint64 startOffset, uint64 numSamples, float scaleBy, float * tempBuf, uint32 tempBufSize);
    void RescaleAudioBuffer(float * buf, uint32 numFloats, float scaleBy) const;
-   SNDFILE * OpenFileForWriting(String & fileName, const SF_INFO & info) const;
+   status_t OpenFileForWriting(String & fileName, const SF_INFO & info, SNDFILE * & retPtr) const;
    status_t DoReadFromFiles(float * samples, uint32 numSamples);
    status_t DoWriteToFiles(const float * samples, uint32 numSamples);
    status_t DoSeekFiles(uint64 offset);

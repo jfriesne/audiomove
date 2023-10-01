@@ -23,7 +23,7 @@
 
 namespace audiomove {
 
-#define VERSION_STRING "1.23"
+#define VERSION_STRING "1.24"
 
 enum {
    AUDIO_FORMAT_SOURCE = 0,  // use same format as source file
@@ -36,6 +36,7 @@ enum {
    AUDIO_FORMAT_PAF_LE,      // convert to little-endian PAF format
    AUDIO_FORMAT_WAV64,       // convert to WAV64 format
    AUDIO_FORMAT_CAF,         // convert to CAF format
+   AUDIO_FORMAT_CAF_ALAC,    // convert to CAF/ALAC format
    AUDIO_FORMAT_RF64,        // convert to RF64 format
    AUDIO_FORMAT_OGGOPUS,     // convert to Ogg Opus format
    AUDIO_FORMAT_NORMALIZED,  // normalized big-endian floats

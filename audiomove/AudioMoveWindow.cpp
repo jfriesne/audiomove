@@ -222,7 +222,8 @@ protected:
 
             SF_BROADCAST_INFO bi; memset(&bi, 0, sizeof(bi));
             bool biValid = false;
-            if (inputThreadRef()->OpenFile().IsOK())
+            status_t ret;
+            if (inputThreadRef()->OpenFile().IsOK(ret))
             {
                if ((inputThread)&&(_isReadBroadcastInfoEnabled)) biValid = inputThread->GetBroadcastInfo(bi).IsOK();
             }
@@ -230,7 +231,7 @@ protected:
             {
                inputThreadRef.SetRef(new ErrorIOThread(sourceFile));
                inputThread = NULL;
-               errorString = qApp->translate("AudioSetupThread", "Couldn't open input file");
+               errorString = qApp->translate("AudioSetupThread", "Couldn't open input file [%1]").arg(ToQ(ret()));
             }
 
             if (targetFormat      == AUDIO_FORMAT_SOURCE) targetFormat      = inputThreadRef()->GetInputFileFormat();
