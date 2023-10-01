@@ -58,6 +58,7 @@ win32:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/compress.c                 \
                 $$SUBMODULESDIR/muscle/zlib/zlib/crc32.c
 
 SOURCES    += audiomove.cpp           \
+              AudioFormatInfo.cpp     \
               AudioMoveWindow.cpp     \
               AudioMoveThread.cpp     \
               LibSndFileIOThread.cpp  \

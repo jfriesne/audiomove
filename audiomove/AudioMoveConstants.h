@@ -29,6 +29,7 @@ enum {
    AUDIO_FORMAT_SOURCE = 0,  // use same format as source file
    AUDIO_FORMAT_WAV,         // convert to WAV format
    AUDIO_FORMAT_AIFF,        // convert to AIFF format
+   AUDIO_FORMAT_MP3,         // convert to MP3 format
    AUDIO_FORMAT_FLAC,        // convert to FLAC format
    AUDIO_FORMAT_OGGVORBIS,   // convert to Ogg Vorbis format
    AUDIO_FORMAT_PAF_BE,      // convert to big-endian PAF format

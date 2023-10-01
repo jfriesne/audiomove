@@ -17,6 +17,7 @@
 */
 
 #include <fcntl.h>
+#include "audiomove/AudioFormatInfo.h"   // for DoesFormatSupportSampleWidths()
 #include "audiomove/LibSndFileIOThread.h"
 #include "audiomove/MiscFunctions.h"
 
@@ -67,9 +68,10 @@ status_t LibSndFileIOThread :: OpenFile()
       switch(_outputFileFormat)
       {
          // FogBugz #3579:  don't use big-endian for WAV: the rest of the world can't handle it yet!
-         case AUDIO_FORMAT_WAV:  info.format = SF_FORMAT_WAV  | SF_ENDIAN_LITTLE; break;
-         case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;    break;
-         case AUDIO_FORMAT_FLAC: info.format = SF_FORMAT_FLAC;                    break;
+         case AUDIO_FORMAT_WAV:  info.format = SF_FORMAT_WAV  | SF_ENDIAN_LITTLE;         break;
+         case AUDIO_FORMAT_AIFF: info.format = SF_FORMAT_AIFF | SF_ENDIAN_BIG;            break;
+         case AUDIO_FORMAT_MP3:  info.format = SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III; break;
+         case AUDIO_FORMAT_FLAC: info.format = SF_FORMAT_FLAC;                            break;
 
          case AUDIO_FORMAT_OGGVORBIS:
             info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
@@ -88,7 +90,7 @@ status_t LibSndFileIOThread :: OpenFile()
             return B_ERROR("Unsupported Output file format");  // we only support the above-listed audio formats for output... for now anyway
       }
 
-      if ((_outputFileFormat != AUDIO_FORMAT_OGGVORBIS)&&(_outputFileFormat != AUDIO_FORMAT_OGGOPUS))  // Ogg doesn't want to know about sample widths?
+      if (DoesFormatSupportSampleWidths(_outputFileFormat))
       {
          switch(_fileSampleWidth)
          {
@@ -100,7 +102,7 @@ status_t LibSndFileIOThread :: OpenFile()
             case AUDIO_WIDTH_INT8:
                switch(_outputFileFormat)
                {
-                  case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_WAV64:  case AUDIO_FORMAT_RF64: // these format support only unsigned-8-bit, not signed-8-bit
+                  case AUDIO_FORMAT_WAV: case AUDIO_FORMAT_WAV64: case AUDIO_FORMAT_RF64: // these format support only unsigned-8-bit, not signed-8-bit
                      info.format |= SF_FORMAT_PCM_U8;
                   break;
 
@@ -109,7 +111,10 @@ status_t LibSndFileIOThread :: OpenFile()
                   break;
                }
             break;
-            default:                 info.format |= SF_FORMAT_FLOAT;  break;
+
+            default:
+               info.format |= SF_FORMAT_FLOAT;
+            break;
          }
       }
 
@@ -156,6 +161,7 @@ status_t LibSndFileIOThread :: OpenFile()
             {
                case SF_FORMAT_WAV:    _inputFileFormat = AUDIO_FORMAT_WAV;       break;
                case SF_FORMAT_AIFF:   _inputFileFormat = AUDIO_FORMAT_AIFF;      break;
+               case SF_FORMAT_MPEG:   _inputFileFormat = AUDIO_FORMAT_MP3;       break;
                case SF_FORMAT_FLAC:   _inputFileFormat = AUDIO_FORMAT_FLAC;      break;
                case SF_FORMAT_VORBIS: _inputFileFormat = AUDIO_FORMAT_OGGVORBIS; break;
                case SF_FORMAT_PAF:    _inputFileFormat = ((info.format & SF_FORMAT_ENDMASK) == SF_ENDIAN_BIG) ? AUDIO_FORMAT_PAF_BE : AUDIO_FORMAT_PAF_LE; break;
@@ -272,16 +278,23 @@ status_t LibSndFileIOThread :: RescaleAudioSegment(uint64 startOffset, uint64 nu
 
 bool LibSndFileIOThread :: IsOkayToRescale() const
 {
-   // No need to rescale if our samples are floating point, since they can't clip anyway
-   if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
+   switch(_outputFileFormat)
+   {
+      case AUDIO_FORMAT_FLAC:
+      case AUDIO_FORMAT_OGGVORBIS:
+      case AUDIO_FORMAT_OGGOPUS:
+      case AUDIO_FORMAT_MP3:
+         return false;  // These audio formats don't support seeking while in write mode, so we can't rescale them
 
-   // These audio formats don't support seeking while in write mode, so we can't rescale them
-   if ((_outputFileFormat == AUDIO_FORMAT_FLAC)||(_outputFileFormat == AUDIO_FORMAT_OGGVORBIS)||(_outputFileFormat == AUDIO_FORMAT_OGGOPUS)) return false;
+      default:
+         // No need to rescale if our samples are floating point, since they can't clip anyway
+         if ((_fileSampleWidth == AUDIO_WIDTH_FLOAT)||(_fileSampleWidth == AUDIO_WIDTH_DOUBLE)) return false;
 
-   // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
-   if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;
+         // Avoid stupid bug in PAF implementation of libsndfile where seek isn't supported in SFM_RDWR mode
+         if (((_outputFileFormat == AUDIO_FORMAT_PAF_BE)||(_outputFileFormat == AUDIO_FORMAT_PAF_LE))&&(_fileSampleWidth == AUDIO_WIDTH_INT24)) return false;
 
-   return true;
+         return true;
+   }
 }
 
 ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QString & retErrStr, bool isLastBuffer)

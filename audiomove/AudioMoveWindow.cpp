@@ -45,6 +45,7 @@
 #include <QStackedWidget>
 #include <QToolButton>
 
+#include "audiomove/AudioFormatInfo.h"  // for GetAudioFormatFilenameExtensions(), etc
 #include "audiomove/AudioMoveConstants.h"
 #include "audiomove/AudioMoveMessageBox.h"
 #include "audiomove/AudioMovePopupMenu.h"
@@ -250,8 +251,8 @@ protected:
             String baseFileName = sourceFile.Substring("/");
             String destFile = dd + baseFileName;
 
-            const char * newExt = origDestDir.HasChars() ? GetAudioFormatExtensions(targetFormat) : NULL;
-            if (newExt) destFile = ReplaceExtension(destFile, newExt);
+            const char * newExt = origDestDir.HasChars() ? GetAudioFormatFileNameExtensions(targetFormat) : "";
+            if (*newExt) destFile = ReplaceExtension(destFile, newExt);
 #ifdef WIN32
             // This is so that e.g. adding D:/ as a folder will work;
             // without this change we'd try to create a folder named "D:"
@@ -274,49 +275,33 @@ protected:
             inputThreadRef()->CloseFile(0);  // we'll open it again when we are ready to do the actual conversion
 
             AudioMoveThreadRef outputThread;
-            if (errorString.length() > 0) outputThread.SetRef(new ErrorIOThread(destFile));
+                 if (errorString.length() > 0) outputThread.SetRef(new ErrorIOThread(destFile));
+            else if ((targetFormat > AUDIO_FORMAT_SOURCE)&&(targetFormat < NUM_AUDIO_FORMATS)&&(targetFormat != AUDIO_FORMAT_NORMALIZED))
+            {
+               String odd = origDestDir;
+               if (odd.EndsWith("/") == false) odd += '/';
+               odd += "dummy";  // because EnsureFileFolderExists() expects to see a filename at the end... it doesn't matter what
+
+               // If we are converting sample rates, we need to update our time-reference count to match
+               if (biValid)
+               {
+                  const uint32 inputSampleRate = inputThreadRef()->GetInputFileSampleRate();
+                  if ((targetSampleRate > 0)&&(inputSampleRate > 0)&&(inputSampleRate != targetSampleRate))
+                  {
+                     const int64 oldTimeRef = (((int64)bi.time_reference_high)<<32)|(((int64)bi.time_reference_low)&(0xFFFFFFFF));
+                     const int64 newTimeRef = (oldTimeRef*targetSampleRate)/inputSampleRate;
+                     bi.time_reference_high = (uint32)(newTimeRef>>32);
+                     bi.time_reference_low  = (uint32)(newTimeRef&0xFFFFFFFF);
+                  }
+               }
+
+               outputThread.SetRef(new LibSndFileIOThread(odd, destFile, (((splitFiles==false)||(convertInPlace))&&(sourceFile==destFile))?sourceFile:"", targetFormat, targetSampleWidth, targetSampleRate, inputThreadRef()->GetFileStreams(), splitFiles, biValid?&bi:NULL));
+               if ((outputThread())&&(origDestDir.HasChars())) (void) outputThread()->GetFilesThatWillBeOverwritten(*subMsg(), SETUP_NAME_FILESTOBEOVERWRITTEN);
+            }
             else
             {
-               switch(targetFormat)
-               {
-                  case AUDIO_FORMAT_WAV:
-                  case AUDIO_FORMAT_AIFF:
-                  case AUDIO_FORMAT_FLAC:
-                  case AUDIO_FORMAT_OGGVORBIS:
-                  case AUDIO_FORMAT_PAF_BE:
-                  case AUDIO_FORMAT_PAF_LE:
-                  case AUDIO_FORMAT_WAV64:
-                  case AUDIO_FORMAT_CAF:
-                  case AUDIO_FORMAT_RF64:
-                  case AUDIO_FORMAT_OGGOPUS:
-                  {
-                     String odd = origDestDir;
-                     if (odd.EndsWith("/") == false) odd += '/';
-                     odd += "dummy";  // because EnsureFileFolderExists() expects to see a filename at the end... it doesn't matter what
-
-                     // If we are converting sample rates, we need to update our time-reference count to match
-                     if (biValid)
-                     {
-                        uint32 inputSampleRate = inputThreadRef()->GetInputFileSampleRate();
-                        if ((targetSampleRate > 0)&&(inputSampleRate > 0)&&(inputSampleRate != targetSampleRate))
-                        {
-                           int64 oldTimeRef = (((int64)bi.time_reference_high)<<32)|(((int64)bi.time_reference_low)&(0xFFFFFFFF));
-                           int64 newTimeRef = (oldTimeRef*targetSampleRate)/inputSampleRate;
-                           bi.time_reference_high = (uint32)(newTimeRef>>32);
-                           bi.time_reference_low  = (uint32)(newTimeRef&0xFFFFFFFF);
-                        }
-                     }
-
-                     outputThread.SetRef(new LibSndFileIOThread(odd, destFile, (((splitFiles==false)||(convertInPlace))&&(sourceFile==destFile))?sourceFile:"", targetFormat, targetSampleWidth, targetSampleRate, inputThreadRef()->GetFileStreams(), splitFiles, biValid?&bi:NULL));
-                     if ((outputThread())&&(origDestDir.HasChars())) (void) outputThread()->GetFilesThatWillBeOverwritten(*subMsg(), SETUP_NAME_FILESTOBEOVERWRITTEN);
-                  }
-                  break;
-
-                  default:
-                     errorString = qApp->translate("AudioSetupThread", "Unknown output format");
-                     outputThread.SetRef(new ErrorIOThread(destFile));
-                  break;
-               }
+               errorString = qApp->translate("AudioSetupThread", "Unknown output format");
+               outputThread.SetRef(new ErrorIOThread(destFile));
             }
 
             if ((subMsg()->AddInt32(SETUP_NAME_QUALITY,    quality)                            .IsOK())&&
@@ -325,24 +310,6 @@ protected:
                 (subMsg()->CAddString(SETUP_NAME_ERROR,    FromQ(errorString))                 .IsOK())) (void) addMsgTo.AddMessage(SETUP_NAME_SETUPRESULT, subMsg);
          }
       }
-   }
-
-   const char * GetAudioFormatExtensions(uint32 format) const
-   {
-      switch(format)
-      {
-         case AUDIO_FORMAT_WAV:       return ".wav";
-         case AUDIO_FORMAT_AIFF:      return ".aiff;.aif";
-         case AUDIO_FORMAT_FLAC:      return ".flac;.fla";
-         case AUDIO_FORMAT_OGGVORBIS: return ".ogg;.oga";
-         case AUDIO_FORMAT_PAF_BE:    return ".paf";
-         case AUDIO_FORMAT_PAF_LE:    return ".paf";
-         case AUDIO_FORMAT_WAV64:     return ".w64";
-         case AUDIO_FORMAT_CAF:       return ".caf";
-         case AUDIO_FORMAT_RF64:      return ".rf64";
-         case AUDIO_FORMAT_OGGOPUS:   return ".opus";
-      }
-      return NULL;
    }
 
    String ReplaceExtension(const String & ss, const String & ext) const
@@ -358,8 +325,8 @@ protected:
          // First, remove any existing extension...
          for (uint32 i=0; i<NUM_AUDIO_FORMATS; i++)
          {
-            const char * e = GetAudioFormatExtensions(i);
-            if (e)
+            const char * e = GetAudioFormatFileNameExtensions(i);
+            if (*e)
             {
                StringTokenizer tok(e, ";;");
                const char * nextExt;
@@ -624,7 +591,7 @@ status_t AudioMoveItem :: MessageReceivedFromUpstream(const MessageRef & msg)
       else
       {
          int32 osize;
-         if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, &osize).IsOK())) _samplesComplete += osize;
+         if ((msg()->HasName(AUDIOMOVE_NAME_BUF))&&(msg()->FindInt32(AUDIOMOVE_NAME_ORIGSIZE, osize).IsOK())) _samplesComplete += osize;
          else
          {
             if (_totalSamples > 0) SetStatus(MOVE_STATUS_ERROR);
@@ -1064,15 +1031,15 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
       Message settingsMsg;
       if (LoadMessageFromRegistry("audiomove", settingsMsg).IsOK())
       {
-         (void) settingsMsg.FindString("amw_dest",    dest);
-         (void) settingsMsg.FindInt32("amw_tformat", &format);
-         (void) settingsMsg.FindInt32("amw_trate",   &rate);
-         (void) settingsMsg.FindInt32("amw_twidth",  &width);
-         (void) settingsMsg.FindInt32("amw_qual",    &cq);
-         (void) settingsMsg.FindInt32("amw_maxp",    &maxp);
-         (void) settingsMsg.FindBool("amw_split",    &split);
-         (void) settingsMsg.FindBool("amw_ipc",      &ipc);
-         (void) settingsMsg.FindBool("amw_cow",      &confirm);
+         (void) settingsMsg.FindString("amw_dest",   dest);
+         (void) settingsMsg.FindInt32("amw_tformat", format);
+         (void) settingsMsg.FindInt32("amw_trate",   rate);
+         (void) settingsMsg.FindInt32("amw_twidth",  width);
+         (void) settingsMsg.FindInt32("amw_qual",    cq);
+         (void) settingsMsg.FindInt32("amw_maxp",    maxp);
+         (void) settingsMsg.FindBool("amw_split",    split);
+         (void) settingsMsg.FindBool("amw_ipc",      ipc);
+         (void) settingsMsg.FindBool("amw_cow",      confirm);
          if (settingsMsg.FindString("amw_afd", addFilesDir).IsOK()) _addFilesDir = LocalToQ(addFilesDir());
          (void) RestoreWindowPositionFromArchive(this, settingsMsg);
       }
@@ -1082,20 +1049,20 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          QHeaderView * h = _processList->header();
 
          int32 cw;
-         for (int32 i=0; settingsMsg.FindInt32("amw_colw", i, &cw).IsOK(); i++) if (cw > 0) h->resizeSection(i, cw);
+         for (int32 i=0; settingsMsg.FindInt32("amw_colw", i, cw).IsOK(); i++) if (cw > 0) h->resizeSection(i, cw);
 
          Hashtable<int32, int32> desiredOrder;
          int32 ci;
-         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, &ci).IsOK(); i++) (void) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
+         for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, ci).IsOK(); i++) (void) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
          desiredOrder.SortByValue();
 
          for (HashtableIterator<int32,int32> iter(desiredOrder, HTIT_FLAG_BACKWARDS); iter.HasData(); iter++) h->moveSection(h->visualIndex(iter.GetKey()), 0);
 
          bool hidden;
-         for (int32 i=0; settingsMsg.FindBool("amw_colh", i, &hidden).IsOK(); i++) _processList->SetSectionHidden(i, hidden);
+         for (int32 i=0; settingsMsg.FindBool("amw_colh", i, hidden).IsOK(); i++) _processList->SetSectionHidden(i, hidden);
 
-         int32 sortColumn = -1;                     (void) settingsMsg.FindInt32("amw_sc", &sortColumn);
-         int32 sortOrder  = (int32) AscendingOrder; (void) settingsMsg.FindInt32("amw_so", &sortOrder);
+         int32 sortColumn = -1;                     (void) settingsMsg.FindInt32("amw_sc", sortColumn);
+         int32 sortOrder  = (int32) AscendingOrder; (void) settingsMsg.FindInt32("amw_so", sortOrder);
          _processList->sortItems(sortColumn, (SortOrder) sortOrder);
       }
 
@@ -1288,56 +1255,14 @@ bool AudioMoveWindow :: IsTargetSampleRateSupported() const
 {
    const uint32 sr = GetTargetSampleRate();
    if (sr == AUDIO_RATE_SOURCE) return true;  // we don't know what it is, so we can't flag it
-
-   switch(GetTargetFormat())
-   {
-      case AUDIO_FORMAT_OGGOPUS:
-         switch(sr)
-         {
-            case AUDIO_RATE_8000:
-            case AUDIO_RATE_12000:
-            case AUDIO_RATE_16000:
-            case AUDIO_RATE_24000:
-            case AUDIO_RATE_48000:
-               return true;
-
-            default:
-               return false;
-         }
-      break;
-
-      default:
-         // empty
-      break;
-   }
-   return true;
+   return DoesFormatSupportSampleRate(GetTargetFormat(), sr);
 }
 
 bool AudioMoveWindow :: IsTargetSampleWidthSupported() const
 {
    const uint32 sw = GetTargetSampleWidth();
    if (sw == AUDIO_WIDTH_SOURCE) return true;  // we don't know what it is, so we can't flag it
-
-   switch(GetTargetFormat())
-   {
-      case AUDIO_FORMAT_FLAC: case AUDIO_FORMAT_PAF_LE: case AUDIO_FORMAT_PAF_BE:
-         switch(sw)
-         {
-            case AUDIO_WIDTH_INT24:
-            case AUDIO_WIDTH_INT16:
-            case AUDIO_WIDTH_INT8:
-               return true;  // these are the ONLY sample-widths that FLAC and PAF support!
-
-            default:
-               return false;
-         }
-      break;
-
-      default:
-         // empty
-      break;
-   }
-   return true;
+   return DoesFormatSupportSampleWidth(GetTargetFormat(), sw);
 }
 
 void AudioMoveWindow :: UpdateComboBoxBackgrounds()
@@ -1345,6 +1270,7 @@ void AudioMoveWindow :: UpdateComboBoxBackgrounds()
    _updateComboBoxBackgroundsPending = false;
    UpdateComboBoxBackground(_targetSampleRate,  IsTargetSampleRateSupported()?MUSCLE_LOG_INFO:MUSCLE_LOG_CRITICALERROR);
    UpdateComboBoxBackground(_targetSampleWidth, IsTargetSampleWidthSupported()?MUSCLE_LOG_INFO:MUSCLE_LOG_CRITICALERROR);
+   UpdateButtons();
 }
 
 QAbstractButton * AudioMoveWindow :: AddButton(const QString & label, const char * slot, QWidget * parent, QBoxLayout * layout)
@@ -1434,22 +1360,7 @@ QString AudioMoveWindow :: GetFileDurationName(int64 frames, uint32 samplesPerSe
 
 QString AudioMoveWindow :: GetFileFormatName(uint32 format) const
 {
-   switch(format)
-   {
-      case AUDIO_FORMAT_SOURCE:     return tr("Source");
-      case AUDIO_FORMAT_WAV:        return ToQ(".WAV");
-      case AUDIO_FORMAT_AIFF:       return ToQ(".AIFF");
-      case AUDIO_FORMAT_FLAC:       return ToQ(".FLAC");
-      case AUDIO_FORMAT_OGGVORBIS:  return ToQ(".OGG");
-      case AUDIO_FORMAT_PAF_BE:     return ToQ(".PAF (B.E.)");
-      case AUDIO_FORMAT_PAF_LE:     return ToQ(".PAF (L.E.)");
-      case AUDIO_FORMAT_WAV64:      return ToQ(".W64");
-      case AUDIO_FORMAT_CAF:        return ToQ(".CAF");
-      case AUDIO_FORMAT_RF64:       return ToQ(".RF64");
-      case AUDIO_FORMAT_OGGOPUS:    return ToQ(".OPUS");
-      case AUDIO_FORMAT_NORMALIZED: return ToQ("");
-      default:                      return tr("Unknown");
-   }
+   return ToQ(GetAudioFormatName(format));
 }
 
 uint32 AudioMoveWindow :: GetFileFormatByName(const QString & name, uint32 defaultFormat) const
@@ -1470,7 +1381,7 @@ uint32 AudioMoveWindow :: GetTargetSampleRate() const
 
 QString AudioMoveWindow :: GetSampleRateName(uint32 rate, bool inTable) const
 {
-   uint32 code = GetSampleRateCodeFromValue(rate);
+   const uint32 code = GetSampleRateCodeFromValue(rate);
    if (code != NUM_AUDIO_RATES) rate = code;
 
    switch(rate)
@@ -1801,7 +1712,7 @@ void AudioMoveWindow :: RemoveSelected()
 void AudioMoveWindow :: UpdateButtons()
 {
    uint32 numSel, numErrs;
-   uint32 numActive = GetNumActiveTransfers(false, &numSel, &numErrs);
+   const uint32 numActive = GetNumActiveTransfers(false, &numSel, &numErrs);
    _removeSelected->setEnabled(numSel > 0);
    _removeComplete->setEnabled(numActive < _moveItems.GetNumItems());
    _destinationStack->setCurrentIndex(GetInPlaceConversions()?1:0);
@@ -1815,7 +1726,9 @@ void AudioMoveWindow :: UpdateButtons()
                       else _quitOnIdle = false;
       }
    }
-   _targetSampleWidth->setEnabled((GetTargetFormat() != AUDIO_FORMAT_OGGVORBIS)&&(GetTargetFormat() != AUDIO_FORMAT_OGGOPUS));  // Ogg doesn't care about sample widths?
+
+   _targetSampleWidth->setEnabled(DoesFormatSupportSampleWidths(GetTargetFormat()));
+   _conversionQuality->setEnabled(GetTargetSampleRate() != AUDIO_RATE_SOURCE);
 }
 
 void AudioMoveWindow :: UpdateDestinationPathStatus()

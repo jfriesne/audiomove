@@ -1,6 +1,6 @@
-AudioMove v1.23 5/28/2021
+AudioMove v1.24 5/28/2021
 by Jeremy Friesner (jaf@meyersound.com)
-Copyright 2004-2021 Meyer Sound Laboratories
+Copyright 2004-2023 Meyer Sound Laboratories
 Licensed under the GNU Public License
 See file LICENSE for details.
 
@@ -11,7 +11,7 @@ This directory contains AudioMove, Meyer Sound's handy batch-mode file-conversio
 What can AudioMove do?
 ----------------------
 
-AudioMove can change the file's format from (any format that libsndfile can read) to WAV, AIFF, FLAC, OGG, and several other formats.
+AudioMove can change the file's format from (any format that libsndfile can read) to WAV, AIFF, MP3, FLAC, OGG, and several other formats.
 
 AudioMove can change the file's sampling rate from (any rate that libsndfile can read) to a number of output sampling rates, ranging from 8kHz to 192kHz.
 
@@ -40,6 +40,8 @@ libsamplerate - Source code to libsamplerate can be downloaded at http://www.meg
 libogg        - Source code to libogg can be downloaded at http://www.xiph.org/downloads/
 libvorbis     - Source code to libvorbis can be downloaded at http://www.xiph.org/downloads/
 libFLAC       - Source code to libFLAC can be downloaded at http://flac.sourceforge.net/download.html
+lame          - Source code to lame can be downloaded at https://lame.sourceforge.io
+mpg123        - Source code to mpg123 can be downloaded at https://www.mpg123.de
 AKRip.dll     - (Win32 build only) Source code to AKRip can be downloaded at http://akrip.sourceforge.net/
 
 
@@ -88,7 +90,7 @@ file       | Specify an input audio file to read.  This keyword may be specified
            |    or:  *.aiff *.wav congo.0.wav
            |
 format     | Specify the output file format.  Possible values are AIFF,
-destformat | WAV, FLAC, OGG, PAF, W64, CAF, RF64, OPUS, or Source.  e.g. destformat=AIFF
+destformat | WAV, FLAC, MP3, OGG, PAF, W64, CAF, RF64, OPUS, or Source.  e.g. destformat=AIFF
            |
 rate       | Specify the output files' sampling rate.  Possible values are
 destrate   | 8, 11, 12, 16, 22, 24, 44, 48, 88, 96, 176, 192, or Source.  e.g. destrate=44
@@ -131,6 +133,9 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 History
 -------
 
+v1.24
+                 - Updated all submodules to the latest versions.
+                 - Added support for reading and writing MP3 audio format.
                  - Fixed a bug that caused destination folders with spaces in the path to not be usable.
 
 v1.23 5/28/2021  - Updated all the submodules to the latest/current versions
