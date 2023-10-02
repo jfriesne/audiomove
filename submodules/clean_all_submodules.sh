@@ -7,5 +7,4 @@ pushd mpg123 ; git clean -fdx ; popd
 pushd muscle ; git clean -fdx ; popd
 pushd ogg ; git clean -fdx ; popd
 pushd opus ; git clean -fdx ; popd
-pushd out ; git clean -fdx ; popd
 pushd vorbis ; git clean -fdx ; popd
