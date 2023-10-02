@@ -4,6 +4,8 @@ pushd submodules
 
 if [ "$BUILD_UNIVERSAL_BINARY" != "" ]; then
    echo "Environment variable BUILD_UNIVERSAL_BINARY detected:  Building for both x86_64 and arm64 architectures"
+else
+   echo "Building native binary only.  On MacOS, you can set environment variable BUILD_UNIVERSAL_BINARY to build a universal binary instead."
 fi
 
 function do_configure {
@@ -109,14 +111,16 @@ echo "************************************************************"
 pushd audiomove
  qmake
  make
- strip ./AudioMove
- mv ./AudioMove ..
- strip ./AudioMove.app/Contents/MacOS/AudioMove
- mv ./AudioMove.app ..
+  if test -f ./AudioMove; then
+     strip ./AudioMove
+  fi
+  if test -f ./AudioMove.app/Contents/MacOS/AudioMove; then
+     strip ./AudioMove.app/Contents/MacOS/AudioMove
+  fi
 popd
 
 echo "************************************************************"
 echo "* Build script exiting -- assuming no errors, the AudioMove"
-echo "* executable should now be in this folder."
+echo "* executable should now be in the audiomove sub-folder."
 echo "************************************************************"
 
