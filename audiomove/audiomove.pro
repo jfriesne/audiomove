@@ -57,7 +57,7 @@ win32:INCLUDEPATH += $$SUBMODULESDIR/libsamplerate/include $$SUBMODULESDIR/libsn
 
 OBJECTS_DIR = objects
 
-win32:INCLUDEPATH += $$SUBMODULESDIR/muscle/regex/regex $$SUBMODULESDIR/muscle/zlib/zlib/win32
+win32:INCLUDEPATH += $$SUBMODULESDIR/muscle/regex/regex $$SUBMODULESDIR/muscle/zlib/zlib
 
 win32:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/compress.c                 \
                  $$SUBMODULESDIR/muscle/platform/win32/Win32FileHandleDataIO.cpp \
