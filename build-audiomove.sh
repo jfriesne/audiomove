@@ -2,12 +2,24 @@
 
 pushd submodules
 
+if [ "$BUILD_UNIVERSAL_BINARY" != "" ]; then
+   echo "Environment variable BUILD_UNIVERSAL_BINARY detected:  Building for both x86_64 and arm64 architectures"
+fi
+
+function do_configure {
+   if [ "$BUILD_UNIVERSAL_BINARY" != "" ]; then
+      CFLAGS="$CFLAGS -arch x86_64 -arch arm64" ./configure $@
+   else
+      ./configure $@
+   fi
+}
+
 echo "************************************************************"
 echo "* Building libsamplerate..."
 echo "************************************************************"
 pushd libsamplerate
 ./autogen.sh
-./configure --enable-shared=no --prefix=$(pwd)/temp_install
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install
 make install
 popd
 
@@ -16,7 +28,7 @@ echo "* Building ogg..."
 echo "************************************************************"
 pushd ogg
 ./autogen.sh
-./configure --enable-shared=no --prefix=$(pwd)/temp_install
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install
 make install
 popd
 
@@ -25,7 +37,7 @@ echo "* Building opus..."
 echo "************************************************************"
 pushd opus
 ./autogen.sh
-./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
 make install
 popd
 
@@ -34,7 +46,7 @@ echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
 ./autogen.sh
-./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
 make install
 popd
 
@@ -43,7 +55,7 @@ echo "* Building flac..."
 echo "************************************************************"
 pushd flac
 ./autogen.sh
-./configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install --disable-asm-optimizations
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install --disable-asm-optimizations
 make install
 popd
 
@@ -51,7 +63,7 @@ echo "************************************************************"
 echo "* Building lame..."
 echo "************************************************************"
 pushd lame
-./configure --enable-shared=no --prefix=$(pwd)/temp_install
+do_configure --enable-shared=no --prefix=$(pwd)/temp_install
 make install
 popd
 
@@ -60,7 +72,7 @@ echo "* Building mpg123..."
 echo "************************************************************"
 pushd mpg123
 autoreconf -iv
-./configure --enable-shared=no --disable-modules --with-cpu=generic_fpu --prefix=$(pwd)/temp_install
+do_configure --enable-shared=no --disable-modules --with-cpu=generic_fpu --prefix=$(pwd)/temp_install
 make install
 popd
 
@@ -85,7 +97,7 @@ export LIBS='-L'$(pwd)'/../lame/temp_install/lib -lmp3lame'
 export MPG123_CFLAGS='-I'$(pwd)'/../mpg123/temp_install/include'
 export MPG123_LIBS='-L'$(pwd)'/../mpg123/temp_install/lib -lmpg123'
 autoreconf -vif
-./configure --enable-shared=no --enable-external-libs --prefix=$(pwd)/temp_install
+do_configure --enable-shared=no --enable-external-libs --prefix=$(pwd)/temp_install
 make install
 popd
 

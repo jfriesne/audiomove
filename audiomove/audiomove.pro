@@ -1,15 +1,25 @@
 CONFIG     += qt warn_on release thread rtti link_prl
 
-FLAGSDIR=.
+mac {
+   BUILD_UNIVERSAL_BINARY = $$(BUILD_UNIVERSAL_BINARY)
+   isEmpty(BUILD_UNIVERSAL_BINARY) {
+      warning("Environment variable BUILD_UNIVERSAL_BINARY not detected:  Building for native architecture only")
+   } else {
+      warning("Environment variable BUILD_UNIVERSAL_BINARY detected:  Building for both x86_64 and arm64 architectures")
+      mac:QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+   }
+}
 
-exists($$FLAGSDIR/enable_sanitizer) {
-   warning("enable_sanitizer file detected:  Enabling clang sanitizer flags")
+ENABLE_ADDRESS_SANITIZER = $$(ENABLE_ADDRESS_SANITIZER)
+!isEmpty(ENABLE_ADDRESS_SANITIZER) {
+   warning("Environment variable ENABLE_ADDRESS_SANITIZER detected:  Enabling clang sanitizer flags")
    QMAKE_CXXFLAGS += -fsanitize=address,undefined -g
    QMAKE_LFLAGS   += -fsanitize=address,undefined
 }
 
-exists($$FLAGSDIR/enable_thread_sanitizer) {
-   warning("enable_thread_sanitizer file detected:  Enabling clang thread-sanitizer flags")
+ENABLE_THREAD_SANITIZER = $$(ENABLE_THREAD_SANITIZER)
+!isEmpty($$FLAGSDIR/ENABLE_THREAD_SANITIZER) {
+   warning("Environment variable ENABLE_THREAD_SANITIZER detected:  Enabling clang thread-sanitizer flags")
    QMAKE_CXXFLAGS += -fsanitize=thread -g
    QMAKE_LFLAGS   += -fsanitize=thread
 }
