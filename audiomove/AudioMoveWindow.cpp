@@ -59,7 +59,6 @@
 
 #ifdef WIN32
 # include "win32dirent.h"
-# include "audiomove/AKRipThread.h"
 #else
 # include <dirent.h>
 #endif
@@ -203,22 +202,9 @@ protected:
          if (subMsg())
          {
             QString errorString;
-            AudioMoveThreadRef inputThreadRef;
 
-#ifdef WIN32
-            /* For Windows, CD audio has to be read using a completely
-             * different API.  Thanks, Microsoft!
-             */
-            if (sourceFile.EndsWith(".cda")) inputThreadRef.SetRef(new AKRipThread(sourceFile));
-#endif
-
-            /** In most cases, we just read the file using libsndfile */
-            LibSndFileIOThread * inputThread = NULL;
-            if (inputThreadRef()==NULL)
-            {
-               inputThread = new LibSndFileIOThread(sourceFile);
-               inputThreadRef.SetRef(inputThread);
-            }
+            LibSndFileIOThread * inputThread(new LibSndFileIOThread(sourceFile));
+            AudioMoveThreadRef inputThreadRef(inputThread);
 
             SF_BROADCAST_INFO bi; memset(&bi, 0, sizeof(bi));
             bool biValid = false;

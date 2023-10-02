@@ -138,6 +138,7 @@ v1.24
                  - Added support for reading and writing MP3 audio format.
                  - Added support for reading and writing CAF+ALAC audio format.
                  - Fixed a bug that caused destination folders with spaces in the path to not be usable.
+                 o Removed the AKRip library from the Windows build as it doesn't appear to support 64-bit builds.
 
 v1.23 5/28/2021  - Updated all the submodules to the latest/current versions
                  - Fixed a Qt-related problem that prevented the "are you sure you want

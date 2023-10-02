@@ -35,7 +35,7 @@ win32:DEFINES += _MT _WIN32_WINNT=0x0501 NDEBUG __WIN32__ _USE_MATH_DEFINES _CRT
 win32:RC_FILE  = ./audiomove.rc
 mac:RC_FILE    = ./audiomove.icns
 
-win32:LIBS    += .\akrip\akrip32.lib $$SUBMODULESDIR\libsndfile\libsndfile-1.lib $$SUBMODULESDIR\libsamplerate\libsamplerate-0.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib psapi.lib
+win32:LIBS    += $$SUBMODULESDIR\libsndfile\libsndfile-1.lib $$SUBMODULESDIR\libsamplerate\libsamplerate-0.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib psapi.lib
 unix:LIBS     += $$SUBMODULESDIR/libsamplerate/temp_install/lib/libsamplerate.a $$SUBMODULESDIR/libsndfile/temp_install/lib/libsndfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbis.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisenc.a $$SUBMODULESDIR/flac/temp_install/lib/libFLAC.a $$SUBMODULESDIR/ogg/temp_install/lib/libogg.a $$SUBMODULESDIR/opus/temp_install/lib/libopus.a $$SUBMODULESDIR/lame/temp_install/lib/libmp3lame.a $$SUBMODULESDIR/mpg123/temp_install/lib/libmpg123.a
 mac:LIBS      += -lz -framework IOKit -framework Carbon -framework SystemConfiguration
 
@@ -69,7 +69,6 @@ win32:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/compress.c                 \
                  $$SUBMODULESDIR/muscle/zlib/zlib/gzlib.c                    \
                  $$SUBMODULESDIR/muscle/zlib/zlib/gzread.c                   \
                  $$SUBMODULESDIR/muscle/zlib/zlib/gzwrite.c                  \
-                 AKRipThread.cpp                                             \
                  Win32dirent.cpp
 
 !mac:SOURCES += $$SUBMODULESDIR/muscle/zlib/zlib/adler32.c  \
