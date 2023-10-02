@@ -35,7 +35,7 @@ win32:DEFINES += _MT _WIN32_WINNT=0x0501 NDEBUG __WIN32__ _USE_MATH_DEFINES _CRT
 win32:RC_FILE  = ./audiomove.rc
 mac:RC_FILE    = ./audiomove.icns
 
-win32:LIBS    += $$SUBMODULESDIR\libsndfile\libsndfile-1.lib $$SUBMODULESDIR\libsamplerate\libsamplerate-0.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib psapi.lib
+win32:LIBS    += $$SUBMODULESDIR\libsndfile\temp_install\lib\sndfile.lib $$SUBMODULESDIR\libsamplerate\temp_install\lib\samplerate.lib shlwapi.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib winmm.lib ws2_32.lib winspool.lib delayimp.lib iphlpapi.lib psapi.lib
 unix:LIBS     += $$SUBMODULESDIR/libsamplerate/temp_install/lib/libsamplerate.a $$SUBMODULESDIR/libsndfile/temp_install/lib/libsndfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbis.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisfile.a $$SUBMODULESDIR/vorbis/temp_install/lib/libvorbisenc.a $$SUBMODULESDIR/flac/temp_install/lib/libFLAC.a $$SUBMODULESDIR/ogg/temp_install/lib/libogg.a $$SUBMODULESDIR/opus/temp_install/lib/libopus.a $$SUBMODULESDIR/lame/temp_install/lib/libmp3lame.a $$SUBMODULESDIR/mpg123/temp_install/lib/libmpg123.a
 mac:LIBS      += -lz -framework IOKit -framework Carbon -framework SystemConfiguration
 
@@ -51,9 +51,6 @@ HEADERS     = AudioMoveWindow.h       \
 TARGET      = AudioMove
 
 INCLUDEPATH = .. $$SUBMODULESDIR $$SUBMODULESDIR/muscle $$SUBMODULESDIR/libsndfile/temp_install/include $$SUBMODULESDIR/libsndfile/src $$SUBMODULESDIR/libsamplerate/temp_install/include
-
-# Enable this if you are cheating and using precompiled libsndfile and/or libamplerate on Win32
-win32:INCLUDEPATH += $$SUBMODULESDIR/libsamplerate/include $$SUBMODULESDIR/libsndfile/include
 
 OBJECTS_DIR = objects
 
