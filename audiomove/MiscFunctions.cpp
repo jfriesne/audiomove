@@ -178,7 +178,7 @@ status_t RestoreWindowPositionFromArchive(QWidget * window, const Message & arch
    Rect r;
    MRETURN_ON_ERROR(archive.FindRect("geometry", r));
 
-   QRect qr(muscleRintf(r.left()), muscleRintf(r.top()), muscleRintf(r.Width()), muscleRintf(r.Height()));
+   QRect qr(muscleRintf(r.left()), muscleRintf(r.top()), muscleRintf(r.GetWidth()), muscleRintf(r.GetHeight()));
    qr.setWidth( muscleClamp(qr.width(),  window->minimumWidth(),  window->maximumWidth()));
    qr.setHeight(muscleClamp(qr.height(), window->minimumHeight(), window->maximumHeight()));
 
