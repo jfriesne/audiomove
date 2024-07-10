@@ -1,6 +1,6 @@
-AudioMove v1.24 5/28/2021
+AudioMove v1.24 7/9/2024
 by Jeremy Friesner (jaf@meyersound.com)
-Copyright 2004-2023 Meyer Sound Laboratories
+Copyright 2004-2024 Meyer Sound Laboratories
 Licensed under the GNU Public License
 See file LICENSE for details.
 
@@ -133,8 +133,7 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 History
 -------
 
-v1.24
-                 - Updated all submodules to the latest versions.
+v1.24 7/9/2024   - Updated all submodules to the latest versions.
                  - Added support for reading and writing MP3 audio format.
                  - Added support for reading and writing CAF+ALAC audio format.
                  - Fixed a bug that caused destination folders with spaces in the path to not be usable.
