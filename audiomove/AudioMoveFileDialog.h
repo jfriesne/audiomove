@@ -8,7 +8,7 @@
 #include <QShowEvent>
 #include <QEvent>
 
-#include "audiomove/AudioMoveNameSpace.h"
+#include "audiomove/AudioMoveMessageBox.h"
 #include "message/Message.h"
 #include "util/NestCount.h"
 
@@ -107,7 +107,7 @@ private slots:
    void PopupMenuResult(int, int whichButton, int menuID);
    void UpdateHotButtons();
    void HandleSelectedFilesChanged();
-   void OverwriteCheckResults(int button, const muscle::MessageRef & files);
+   void OverwriteCheckResults(QMessageBox::ButtonRole buttonRole, const muscle::MessageRef & files);
    void CheckForOverwrite(const QStringList & sl);
    void CheckForDirectoryChange();
    void CheckForDirectoryChangeAsync();

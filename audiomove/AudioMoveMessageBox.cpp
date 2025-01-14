@@ -8,13 +8,13 @@ namespace audiomove {
 AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, QWidget * parent) : QMessageBox(parent), _autoDelete(autoDelete), _signalEmitted(true), _objectType(0), _objectID(0)
 {
    EnableHackFixForFogBugz15263();
-   if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(int, const muscle::MessageRef &, int, int)), target, slotName);
+   if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(QMessageBox::ButtonRole, const muscle::MessageRef &, int, int)), target, slotName);
 }
 
-AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, int button0, int button1, int button2, QWidget * parent, WindowFlags flags) : QMessageBox(caption, text, icon, button0, button1, button2, parent, flags), _autoDelete(autoDelete), _signalEmitted(true), _objectType(0), _objectID(0)
+AudioMoveMessageBox :: AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, StandardButtons standardButtons, QWidget * parent, WindowFlags flags) : QMessageBox(icon, caption, text, standardButtons, parent, flags), _autoDelete(autoDelete), _signalEmitted(true), _objectType(0), _objectID(0)
 {
    EnableHackFixForFogBugz15263();
-   if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(int, const muscle::MessageRef &, int, int)), target, slotName);
+   if ((target)&&(slotName)) connect(this, SIGNAL(OptionChosen(QMessageBox::ButtonRole, const muscle::MessageRef &, int, int)), target, slotName);
 }
 
 AudioMoveMessageBox :: ~AudioMoveMessageBox()
@@ -25,7 +25,7 @@ AudioMoveMessageBox :: ~AudioMoveMessageBox()
 void AudioMoveMessageBox :: EnableHackFixForFogBugz15263()
 {
 #if QT_VERSION >= 0x050c02  // FogBugz #15263
-   connect(this, SIGNAL(finished(int)), this, SLOT(HandleDoneAux(int)));
+   connect(this, SIGNAL(finished(int)), this, SLOT(HandleDoneAux()));
 #endif
 }
 
@@ -41,20 +41,24 @@ void AudioMoveMessageBox :: Go(int objectType, int objectID, const MessageRef & 
 void AudioMoveMessageBox :: done(int r)
 {
 #if QT_VERSION < 0x050c02  // FogBugz #15263
-   HandleDoneAux(r);
+   HandleDoneAux();
 #endif
    QMessageBox::done(r);
-   if (_autoDelete) deleteLater();
 }
 
-void AudioMoveMessageBox :: HandleDoneAux(int r)
+void AudioMoveMessageBox :: HandleDoneAux()
 {
+   QAbstractButton * b = clickedButton();
+
+   const QMessageBox::ButtonRole r = b ? buttonRole(b) : QMessageBox::InvalidRole;
    emit OptionChosen(r, _msg, _objectType, _objectID);
+
+   if (_autoDelete) deleteLater();
 }
 
 void AudioMoveMessageBox :: ShowMessage(const QString & caption, const QString & text, Icon icon, QWidget * parent)
 {
-   (new AudioMoveMessageBox(true, NULL, NULL, caption, text, icon, QMessageBox::Ok|QMessageBox::Default, NoButton, NoButton, parent))->Go();
+   (new AudioMoveMessageBox(true, NULL, NULL, caption, text, icon, StandardButtons(QMessageBox::Ok), parent))->Go();
 }
 
 };  // end namespace audiomove

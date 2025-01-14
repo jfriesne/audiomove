@@ -1104,24 +1104,24 @@ void AudioMoveWindow :: ConvertInPlaceToggled()
    Message dontask;
    if ((GetInPlaceConversions())&&(LoadMessageFromRegistry("cip_dontask", dontask).IsError()))
    {
-      AudioMoveMessageBox * amb = new AudioMoveMessageBox(true, this, SLOT(ConvertInPlaceWarningOptionSelected(int)), tr("Convert in Place Warning"), tr("When running in Convert-in-Place mode, AudioMove will overwrite your input files with the converted output files.\n\nOnce a Convert-in-Place operation has completed, it cannot be undone.\n\nAre you sure you want to use Convert-in-Place mode?"), QMessageBox::Warning, QMessageBox::YesToAll, QMessageBox::Yes, QMessageBox::No, this);  // FogBugz #4381
+      AudioMoveMessageBox * amb = new AudioMoveMessageBox(true, this, SLOT(ConvertInPlaceWarningOptionSelected(QMessageBox::ButtonRole)), tr("Convert in Place Warning"), tr("When running in Convert-in-Place mode, AudioMove will overwrite your input files with the converted output files.\n\nOnce a Convert-in-Place operation has completed, it cannot be undone.\n\nAre you sure you want to use Convert-in-Place mode?"), QMessageBox::Warning, QMessageBox::StandardButtons(QMessageBox::Yes|QMessageBox::No), this);  // FogBugz #4381
       amb->setWindowModality(WindowModal);
       amb->setDefaultButton(dynamic_cast<QPushButton *>(amb->button(QMessageBox::No)));
       amb->setEscapeButton(amb->button(QMessageBox::No));
-      amb->setButtonText(QMessageBox::YesToAll, tr("Yes, and don't show this again"));
+      amb->addButton(tr("Yes, and don't show this again"), QMessageBox::DestructiveRole);
       amb->Go();
    }
 }
 
-void AudioMoveWindow :: ConvertInPlaceWarningOptionSelected(int button)
+void AudioMoveWindow :: ConvertInPlaceWarningOptionSelected(QMessageBox::ButtonRole buttonRole)
 {
-   switch(button)
+   switch(buttonRole)
    {
-      case QMessageBox::YesToAll:
+      case QMessageBox::DestructiveRole:
          (void) SaveMessageToRegistry("cip_dontask", Message());
       break;
 
-      case QMessageBox::No:
+      case QMessageBox::NoRole:
          SetInPlaceConversions(false);
       break;
 
@@ -1301,7 +1301,7 @@ uint32 AudioMoveWindow :: GetNumActiveTransfers(bool selectedOnly, uint32 * optR
 void AudioMoveWindow :: closeEvent(QCloseEvent * e)
 {
    uint32 numActive = GetNumActiveTransfers(false, NULL, NULL);
-   if ((numActive > 0)&&(QMessageBox::warning(this, tr("Incomplete Conversions Warning"), tr("There are %1 conversions still in progress.  Are you sure you want to quit now?").arg(numActive), QMessageBox::Yes, QMessageBox::Cancel|QMessageBox::Escape) == QMessageBox::Cancel))
+   if ((numActive > 0)&&(QMessageBox::warning(this, tr("Incomplete Conversions Warning"), tr("There are %1 conversions still in progress.  Are you sure you want to quit now?").arg(numActive), QMessageBox::StandardButtons(QMessageBox::Yes|QMessageBox::Cancel)) == QMessageBox::Cancel))
    {
       e->ignore();
       return;
@@ -1386,7 +1386,7 @@ QString AudioMoveWindow :: GetSampleRateName(uint32 rate, bool inTable) const
       case AUDIO_RATE_12000:  return tr("12kHz");
       case AUDIO_RATE_11025:  return tr("11.025kHz");
       case AUDIO_RATE_8000:   return tr("8kHz");
-      default:                return tr("%1KHz").arg((uint32)(rate/1000), (int)0, (char)'g', (int)2, QLatin1Char(' '));
+      default:                return tr("%1KHz").arg((uint32)(rate/1000));
    }
 }
 
@@ -1686,8 +1686,8 @@ void AudioMoveWindow :: RemoveComplete()
 void AudioMoveWindow :: RemoveSelected()
 {
    uint32 numSel;
-   uint32 numActive = GetNumActiveTransfers(true, &numSel, NULL);
-   if ((numActive == 0)||(QMessageBox::warning(this, tr("Incomplete Conversions Warning"), tr("%1 of the %2 selected conversions are still in progress.  Are you sure you want to remove them now?").arg(numActive).arg(numSel), QMessageBox::Yes, QMessageBox::No|QMessageBox::Escape) == QMessageBox::Yes))
+   const uint32 numActive = GetNumActiveTransfers(true, &numSel, NULL);
+   if ((numActive == 0)||(QMessageBox::warning(this, tr("Incomplete Conversions Warning"), tr("%1 of the %2 selected conversions are still in progress.  Are you sure you want to remove them now?").arg(numActive).arg(numSel), QMessageBox::StandardButtons(QMessageBox::Yes|QMessageBox::No)) == QMessageBox::Yes))
    {
       for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) if (iter.GetValue()->isSelected()) DeleteAudioMoveItem(iter.GetKey(), iter.GetValue());
       UpdateConfirmationState();

@@ -29,7 +29,7 @@
 #include <QDragEnterEvent>
 #include <QTimer>
 
-#include "audiomove/AudioMoveNameSpace.h"
+#include "audiomove/AudioMoveMessageBox.h"
 #include "audiomove/AudioMoveThread.h"
 #include "util/String.h"
 
@@ -220,7 +220,7 @@ private slots:
    void UpdateDestinationPathStatus();
    void DestinationDirSelected(const QStringList &);
    void ConvertInPlaceToggled();
-   void ConvertInPlaceWarningOptionSelected(int button);
+   void ConvertInPlaceWarningOptionSelected(QMessageBox::ButtonRole buttonRole);
    void UpdateConfirmationState();
    void ShowConfirmationDialog();
    void ScheduleUpdateComboBoxBackgrounds();

@@ -38,13 +38,11 @@ public:
      * @param caption Message box caption.  Passed on to the QMessageBox constructor.
      * @param text Message box text.  Passed on to the QMessageBox constructor.
      * @param icon Message box icon.  Passed on to the QMessageBox constructor.
-     * @param button0 Type code for the first button.  Passed on to the QMessageBox constructor.
-     * @param button1 Type code for the second button.  Passed on to the QMessageBox constructor.
-     * @param button2 Type code for the third button.  Passed on to the QMessageBox constructor.
+     * @param standardButtons a bit-chord indicating which StandardButtons you want the QMessageBox to include.
      * @param parent Passed to the QMessageBox constructor.
      * @param flags window flags to pass to the QMessageBox constructor.
      */
-   AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, int button0, int button1, int button2, QWidget * parent, WindowFlags flags = Dialog|MSWindowsFixedSizeDialogHint);
+   AudioMoveMessageBox(bool autoDelete, QObject * target, const char * slotName, const QString & caption, const QString & text, Icon icon, StandardButtons standardButtons, QWidget * parent, WindowFlags flags = Dialog|MSWindowsFixedSizeDialogHint);
 
    /** Destructor. */
    virtual ~AudioMoveMessageBox();
@@ -67,18 +65,18 @@ public:
 signals:
    /** This signal is sent when the user chooses an item or dismisses the message box.
      * If (autoDelete) is true, then this AudioMoveMessageBox will delete itself after emitting the signal.
-     * @param buttonID The ID of the button that was clicked, or QMessageBox::NoButton if no button was clicked.
+     * @param buttonRole The role of the button that was clicked
      * @param msg The MessageRef that was passed in to ShowMessageBox().
      * @param objectType The object type value, as was passed in to Go()
      * @param objectID The object ID value, as was passed in to Go()
      */
-   void OptionChosen(int buttonID, const muscle::MessageRef & msg, int objectType, int objectID);
+   void OptionChosen(QMessageBox::ButtonRole buttonRole, const muscle::MessageRef & msg, int objectType, int objectID);
 
 protected:
    virtual void done(int r);
 
 private slots:
-   void HandleDoneAux(int r);
+   void HandleDoneAux();
 
 private:
    void EnableHackFixForFogBugz15263();

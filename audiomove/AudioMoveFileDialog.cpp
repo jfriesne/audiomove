@@ -711,7 +711,7 @@ void AudioMoveFileDialog :: CheckForOverwrite(const QStringList & sl)
                              else textStr = tr("The following files already exist:\n%1\n\nAre you sure you want to replace them?").arg(alreadyExists);
 
          ShowDialog(this);  // re-show ourself, in case we got hidden
-         (new AudioMoveMessageBox(true, this, SLOT(OverwriteCheckResults(int, const muscle::MessageRef &)), tr("File Overwrite Check"), textStr, QMessageBox::Question, QMessageBox::Ok|QMessageBox::Default, QMessageBox::Cancel|QMessageBox::Escape, QMessageBox::NoButton, this))->Go(0,0,files);
+         (new AudioMoveMessageBox(true, this, SLOT(OverwriteCheckResults(QMessageBox::ButtonRole, const muscle::MessageRef &)), tr("File Overwrite Check"), textStr, QMessageBox::Question, QMessageBox::StandardButtons(QMessageBox::Ok|QMessageBox::Cancel), this))->Go(0,0,files);
          return;
       }
    }
@@ -726,9 +726,9 @@ void AudioMoveFileDialog :: ReturnFileResults(const QStringList & sl)
 }
 
 // Called when the user responds to the "are you sure you want to replace blah?" requester
-void AudioMoveFileDialog :: OverwriteCheckResults(int button, const MessageRef & files)
+void AudioMoveFileDialog :: OverwriteCheckResults(QMessageBox::ButtonRole buttonRole, const MessageRef & files)
 {
-   if ((button == QMessageBox::Ok)&&(files()))
+   if ((buttonRole == QMessageBox::AcceptRole)&&(files()))
    {
       QStringList sl;
       const char * next;
