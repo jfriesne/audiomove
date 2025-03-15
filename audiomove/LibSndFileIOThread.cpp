@@ -181,6 +181,7 @@ status_t LibSndFileIOThread :: OpenFile()
             // Read mode:  extract attributes from libsndfile
             switch(info.format & SF_FORMAT_TYPEMASK)
             {
+               case SF_FORMAT_WAVEX: // fall through
                case SF_FORMAT_WAV:  _inputFileFormat = AUDIO_FORMAT_WAV;   break;
                case SF_FORMAT_AIFF: _inputFileFormat = AUDIO_FORMAT_AIFF;  break;
                case SF_FORMAT_MPEG: _inputFileFormat = AUDIO_FORMAT_MP3;   break;

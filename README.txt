@@ -133,6 +133,8 @@ Here is an example invocation of AudioMove from the command line under MacOS/X:
 History
 -------
 
+                 - Added recognition of WAVEX files (as a superset of WAV)
+
 v1.24 7/9/2024   - Updated all submodules to the latest versions.
                  - Added support for reading and writing MP3 audio format.
                  - Added support for reading and writing CAF+ALAC audio format.
