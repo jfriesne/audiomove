@@ -92,6 +92,7 @@ SOURCES    += audiomove.cpp           \
               $$SUBMODULESDIR/muscle/regex/StringMatcher.cpp          \
               $$SUBMODULESDIR/muscle/syslog/SysLog.cpp                \
               $$SUBMODULESDIR/muscle/system/SetupSystem.cpp           \
+              $$SUBMODULESDIR/muscle/system/StackTrace.cpp            \
               $$SUBMODULESDIR/muscle/system/SystemInfo.cpp            \
               $$SUBMODULESDIR/muscle/system/SharedMemory.cpp          \
               $$SUBMODULESDIR/muscle/system/Thread.cpp                \
