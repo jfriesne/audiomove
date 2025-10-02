@@ -538,7 +538,7 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
 #endif
             {
                const Queue<String> & subList = GetFilePathsForItem(twi);
-               for (int32 j=subList.GetNumItems()-1; j>=0; j--) (void) temp.Put(subList[j], true);
+               for (int32 j=subList.GetLastValidIndex(); j>=0; j--) (void) temp.Put(subList[j], true);
             }
          }
          temp.SortByKey();
@@ -779,7 +779,7 @@ void AudioMoveFileDialog :: UpdateRecentFilesTreeWidget()
       QString displayStr;
       const Queue<String> & q = _recentFilesList[i];
       bool isReadable = (q.GetNumItems()>0);
-      for (int32 j=q.GetNumItems()-1; j>=0; j--)
+      for (int32 j=q.GetLastValidIndex(); j>=0; j--)
       {
          if (QFileInfo(LocalToQ(q[j]())).isReadable() == false) isReadable = false;
          if (displayStr.length() > 0) displayStr += LocalToQ(", ");
