@@ -499,7 +499,7 @@ status_t AudioMoveItem :: SendBuffers(bool allowChangeStatus)
          bool isOkay = false;
          uint32 maxNumActive = _owner->GetMaxProcesses();
          uint32 numActive = 0;
-         for (HashtableIterator<uint32, AudioMoveItem *> iter(_owner->_moveItems); ((numActive<maxNumActive)&&(iter.HasData())); iter++)
+         for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_owner->_moveItems); ((numActive<maxNumActive)&&(iter.HasData())); iter++)
          {
             AudioMoveItem * next = iter.GetValue();
             if (next->GetStatus() == MOVE_STATUS_PROCESSING) numActive++;
@@ -1043,7 +1043,7 @@ AudioMoveWindow :: AudioMoveWindow(const Message & args, QWidget * parent, Windo
          for (int32 i=0; settingsMsg.FindInt32("amw_coli", i, ci).IsOK(); i++) (void) desiredOrder.Put(desiredOrder.GetNumItems(), ci);
          desiredOrder.SortByValue();
 
-         for (HashtableIterator<int32,int32> iter(desiredOrder, HTIT_FLAG_BACKWARDS); iter.HasData(); iter++) h->moveSection(h->visualIndex(iter.GetKey()), 0);
+         for (ConstHashtableIterator<int32,int32> iter(desiredOrder, HTIT_FLAG_BACKWARDS); iter.HasData(); iter++) h->moveSection(h->visualIndex(iter.GetKey()), 0);
 
          bool hidden;
          for (int32 i=0; settingsMsg.FindBool("amw_colh", i, hidden).IsOK(); i++) _processList->SetSectionHidden(i, hidden);
@@ -1276,7 +1276,7 @@ uint32 AudioMoveWindow :: GetNumActiveTransfers(bool selectedOnly, uint32 * optR
 
    // See we have any non-completed, non-error'd events
    uint32 numActive = 0;
-   for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++)
+   for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++)
    {
       AudioMoveItem * next = iter.GetValue();
       if ((optRetNumSel)&&(next->isSelected())) (*optRetNumSel)++;
@@ -1471,7 +1471,7 @@ QString AudioMoveWindow :: GetStatusName(uint32 status) const
 void AudioMoveWindow :: MaxSimultaneousChanged()
 {
    // First, go through and set all active processes to the "waiting" state...
-   for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) iter.GetValue()->Halt();
+   for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) iter.GetValue()->Halt();
 
    // Then Dequeue as many processes as can now fit
    DequeueTransfers();
@@ -1608,7 +1608,7 @@ void AudioMoveWindow :: DequeueTransfers()
    {
       uint32 numActive    = 0;
       uint32 maxNumActive = GetMaxProcesses();
-      for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); ((numActive<maxNumActive)&&(iter.HasData())); iter++)
+      for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); ((numActive<maxNumActive)&&(iter.HasData())); iter++)
       {
          AudioMoveItem * next = iter.GetValue();
          bool update = false;
@@ -1657,7 +1657,7 @@ void AudioMoveWindow :: TogglePaused()
 void AudioMoveWindow :: ForceUpdateAll()
 {
    // Force update of all active items, so that "Paused" will become "Processing" or vice versa
-   for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) iter.GetValue()->Update(true);
+   for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) iter.GetValue()->Update(true);
 }
 
 void AudioMoveWindow :: DeleteAudioMoveItem(uint32 nextKey, AudioMoveItem * next)
@@ -1669,7 +1669,7 @@ void AudioMoveWindow :: DeleteAudioMoveItem(uint32 nextKey, AudioMoveItem * next
 
 void AudioMoveWindow :: RemoveComplete()
 {
-   for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++)
+   for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++)
    {
       AudioMoveItem * next = iter.GetValue();
       switch(next->GetStatus())
@@ -1689,7 +1689,7 @@ void AudioMoveWindow :: RemoveSelected()
    const uint32 numActive = GetNumActiveTransfers(true, &numSel, NULL);
    if ((numActive == 0)||(QMessageBox::warning(this, tr("Incomplete Conversions Warning"), tr("%1 of the %2 selected conversions are still in progress.  Are you sure you want to remove them now?").arg(numActive).arg(numSel), QMessageBox::StandardButtons(QMessageBox::Yes|QMessageBox::No)) == QMessageBox::Yes))
    {
-      for (HashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) if (iter.GetValue()->isSelected()) DeleteAudioMoveItem(iter.GetKey(), iter.GetValue());
+      for (ConstHashtableIterator<uint32, AudioMoveItem *> iter(_moveItems); iter.HasData(); iter++) if (iter.GetValue()->isSelected()) DeleteAudioMoveItem(iter.GetKey(), iter.GetValue());
       UpdateConfirmationState();
       UpdateButtons();
       DequeueTransfers();
@@ -1884,7 +1884,7 @@ void AudioMoveConfirmationDialog :: DoConfirmationResult(bool isYes, bool isToAl
 
 void AudioMoveWindow :: FinalizePendingConfirmations(uint32 newState, const QString * optErrStr)
 {
-   for (HashtableIterator<AudioMoveItem *, bool> iter(_pendingConfirmations); iter.HasData(); iter++)
+   for (ConstHashtableIterator<AudioMoveItem *, bool> iter(_pendingConfirmations); iter.HasData(); iter++)
    {
       iter.GetKey()->SetStatus(newState);
       if (optErrStr) iter.GetKey()->SetStatusString(*optErrStr);

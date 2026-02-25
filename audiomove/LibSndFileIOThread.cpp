@@ -50,7 +50,7 @@ LibSndFileIOThread :: ~LibSndFileIOThread()
 
 void LibSndFileIOThread :: DeleteTempFiles()
 {
-   for (HashtableIterator<String, bool> iter(_tempFiles, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) (void) unlink(iter.GetKey()());
+   for (ConstHashtableIterator<String, bool> iter(_tempFiles, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++) (void) unlink(iter.GetKey()());
    _tempFiles.Clear();
 }
 
@@ -380,7 +380,7 @@ ByteBufferRef LibSndFileIOThread :: ProcessBuffer(const ByteBufferRef & buf, QSt
                      float finalScaling = 1.0f/_currentMaxOutputSample;
                      int64 prevOffset  = 0;
                      float prevMaxSample = DEFAULT_ANTICLIP_MAXIMUM_SAMPLE_VALUE;
-                     for (HashtableIterator<int64, float> iter(_maxSamplesRecord); iter.HasData(); iter++)
+                     for (ConstHashtableIterator<int64, float> iter(_maxSamplesRecord); iter.HasData(); iter++)
                      {
                         int64 nextOffset    = iter.GetKey();
                         float nextMaxSample = iter.GetValue();
@@ -527,7 +527,7 @@ status_t LibSndFileIOThread :: DoReadFromFiles(float * samples, uint32 numSample
 
          float * in = (float *) _splitBuf.GetBuffer();
          uint32 i=0;
-         for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+         for (ConstHashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
          {
             if (sf_read_float(iter.GetValue(), in, numFrames) != numFrames) return B_ERROR("sf_read_float() failed B");
             float * out = &samples[i];
@@ -575,7 +575,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
 
          float * out = (float *) _splitBuf.GetBuffer();
          uint32 i = 0;
-         for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+         for (ConstHashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
          {
             const float * in = &samples[i];
             for (uint32 j=0; j<numFrames; j++) out[j] = in[j*numStreams];
@@ -589,7 +589,7 @@ status_t LibSndFileIOThread :: DoWriteToFiles(const float * samples, uint32 numS
 
 status_t LibSndFileIOThread :: DoSeekFiles(uint64 offset)
 {
-   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+   for (ConstHashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
       if (sf_seek(iter.GetValue(), offset, SEEK_SET) != (sf_count_t)offset) return B_ERROR("sf_seek() failed");
    return B_NO_ERROR;
 }
@@ -598,7 +598,7 @@ void LibSndFileIOThread :: DoCloseFiles(uint32 closeFlags)
 {
    const bool isFinal = ((closeFlags & CLOSE_FLAG_FINAL) != 0);
    const bool isError = ((closeFlags & CLOSE_FLAG_ERROR) != 0);
-   for (HashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
+   for (ConstHashtableIterator<String, SNDFILE *> iter(_files, HTIT_FLAG_NOREGISTER); iter.HasData(); iter++)
    {
       // close the file FIRST to avoid any file-locking problems in Windows, etc
       sf_close(iter.GetValue());

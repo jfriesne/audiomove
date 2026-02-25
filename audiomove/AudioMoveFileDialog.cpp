@@ -542,7 +542,7 @@ void AudioMoveFileDialog :: RecentFileSelectionChanged()
             }
          }
          temp.SortByKey();
-         for (HashtableIterator<String, bool> iter(temp); iter.HasData(); iter++) (void) sl.AddTail(iter.GetKey());
+         for (ConstHashtableIterator<String, bool> iter(temp); iter.HasData(); iter++) (void) sl.AddTail(iter.GetKey());
       }
 
       NestCountGuard ncg(_fileHighlightedDisableCount);
