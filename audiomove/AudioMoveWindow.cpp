@@ -627,6 +627,19 @@ public:
       QStyleOptionViewItem to(option);
       to.textElideMode = textElideMode;
       to.state &= ~QStyle::State_Selected;  // so that we can choose our own colors
+
+      // The row backgrounds we paint in drawCheck() are always light colors, so
+      // the text over them has to be dark no matter what the system appearance
+      // is.  Otherwise it gets drawn in the palette's foreground color, which is
+      // near-white under the Dark appearance and effectively invisible against
+      // the yellow "processing" and green "complete" backgrounds.
+      // (setColor() with no color group applies to Normal, Inactive and
+      // Disabled alike, which matters here -- QItemDelegate picks Inactive when
+      // the window is not frontmost, so setting Normal alone would leave the
+      // text unreadable again whenever AudioMove is in the background.)
+      to.palette.setColor(QPalette::Text,            black);
+      to.palette.setColor(QPalette::HighlightedText, black);
+
       QItemDelegate::paint(painter, to, index);
    }
 
@@ -1228,6 +1241,14 @@ static void UpdateComboBoxBackground(QComboBox * b, int errorLevel)
    {
       QPalette p = b->palette();
       p.setColor(b->backgroundRole(), GetColorForErrorLevel(errorLevel));
+      // GetColorForErrorLevel() returns light colors, so pin the text dark for
+      // the same reason as in AudioMoveTreeItemDelegate::paint() -- under the
+      // Dark appearance the inherited foreground color is near-white and cannot
+      // be read against them.  Only ButtonText is set, since that is what a
+      // non-editable combo box draws its label with; setting QPalette::Text
+      // here would also recolor the drop-down list, whose items are drawn on
+      // the (still dark) Base color and would become unreadable.
+      p.setColor(QPalette::ButtonText, black);
       b->setAutoFillBackground(true);
       b->setPalette(p);
    }
