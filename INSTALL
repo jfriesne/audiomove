@@ -2,11 +2,26 @@ Basic Installation
 ==================
 
 These are generic build instructions.  AudioMove should be
-buildable under any OS that has a valid Qt 5.x development environment.
+buildable under any OS that has a valid Qt 5.x or Qt 6.x development
+environment.
 
-1) Make sure you have a Qt5 build environment set up on your machine.
+1) Make sure you have a Qt build environment set up on your machine.
 
-2) If you downloaded this folder from GitHub (e.g. via a "git clone"
+2) Make sure you have the GNU autotools installed, since the bundled
+   third-party libraries are built with them.  On MacOS with Homebrew:
+
+     brew install qt autoconf automake libtool autogen pkg-config
+
+   The "autogen" package is GNU AutoGen, which is separate from the
+   autogen.sh scripts in the submodules.  libsndfile uses it to generate
+   src/test_endswap.c, and its build will stop without it.
+
+   On MacOS the GNU libtool is installed as "glibtoolize", so put
+   Homebrew's gnubin directory ahead of it on your PATH before building:
+
+     export PATH="$(brew --prefix libtool)/libexec/gnubin:$PATH"
+
+3) If you downloaded this folder from GitHub (e.g. via a "git clone"
    command), be sure to do a
 
      git submodule update --init --recursive
@@ -14,9 +29,77 @@ buildable under any OS that has a valid Qt 5.x development environment.
    ... so that all the code for all the necessary third-party
    dependencies will be downloaded.
 
-3) Run the included install.sh script:
+4) Run the included build script:
 
      source ./build-audiomove.sh
 
-4) In a few minutes, your AudioMove executable should be build and
+5) In a few minutes, your AudioMove executable should be built and
    ready in the audiomove sub-directory.
+
+
+Notes for MacOS
+===============
+
+The build script pins the bundled C libraries to -std=gnu17.  Apple clang
+16 and later default to -std=gnu23, in which an empty parameter list "f()"
+declares a function taking no arguments rather than an unspecified number
+of them; several of the bundled libraries still use K&R declarations and
+will not compile as C23.
+
+The script also builds the bundled libraries against a deployment target of
+14.0 by default, to match the minimum OS of a Homebrew Qt 6 build.  Override
+it if you are linking against a Qt that supports an older OS:
+
+  MACOSX_DEPLOYMENT_TARGET=12.0 source ./build-audiomove.sh
+
+To produce a redistributable .app that does not require Qt to be installed
+on the target machine, run macdeployqt afterwards:
+
+  macdeployqt audiomove/AudioMove.app -always-overwrite
+
+It will report that it cannot resolve QtPdf, QtSvg and QtVirtualKeyboard.
+Those are optional Qt modules that a qtbase-only install does not provide;
+AudioMove does not use any of them and the resulting bundle runs fine.
+
+Universal binaries
+------------------
+
+Setting BUILD_UNIVERSAL_BINARY builds the bundled libraries and AudioMove
+for both x86_64 and arm64:
+
+  BUILD_UNIVERSAL_BINARY=1 source ./build-audiomove.sh
+
+Note that this only produces a working universal .app if the Qt you link
+against is itself universal.  Homebrew's Qt is single-architecture (arm64
+on Apple Silicon); the bundled libraries will still build as universal, but
+the final link then fails with
+
+  ld: symbol(s) not found for architecture x86_64
+
+The official Qt binaries for macOS are universal, so build against those
+instead -- either from the Qt online installer, or non-interactively:
+
+  pip install aqtinstall
+  aqt install-qt mac desktop 6.11.1 clang_64 --archives qtbase --outputdir qt
+  export PATH="$PWD/qt/6.11.1/macos/bin:$PATH"
+  BUILD_UNIVERSAL_BINARY=1 source ./build-audiomove.sh
+
+Verified on macOS 26.5 with Qt 6.11.1: the resulting binary carries both
+slices, and running each one (the x86_64 slice under Rosetta) converts to
+AIFF, FLAC, MP3, OGG, OPUS and CAF.
+
+Do not expect the two slices to produce byte-identical output across the
+board, and do not read that as a fault in the build:
+
+  AIFF, MP3, CAF  byte-identical between the slices.
+
+  FLAC            deterministic within an architecture, but different
+                  between them, because the encoder's analysis is
+                  floating-point.  The difference is confined to the
+                  encoder's framing decisions -- the two slices' FLAC files
+                  decode to byte-identical PCM, so nothing is lost.
+
+  OGG, OPUS       different on every run, even from the same slice on the
+                  same machine, because an Ogg stream carries a randomly
+                  generated bitstream serial number.  This one is not an
+                  architecture difference at all.

@@ -8,11 +8,26 @@ else
    echo "Building native binary only.  On MacOS, you can set environment variable BUILD_UNIVERSAL_BINARY to build a universal binary instead."
 fi
 
+# Apple clang 16 and later default to -std=gnu23, in which an empty parameter
+# list "f()" declares a function taking NO arguments rather than an unspecified
+# number of them.  Several of the vendored libraries still contain K&R-style
+# declarations, so pin the C dialect back to C17 for the dependency builds.
+EXTRA_CFLAGS="-std=gnu17"
+
+# Build the vendored libraries against the same deployment floor that Qt uses,
+# so that every object in the final binary agrees on a minimum OS.  Without
+# this, ld warns that each vendored object "was built for newer 'macOS' version
+# (26.0) than being linked (14.0)", and the bundle would advertise an
+# LSMinimumSystemVersion it cannot actually honour.
+export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-14.0}"
+
 function do_configure {
    if [ "$BUILD_UNIVERSAL_BINARY" != "" ]; then
-      CFLAGS="$CFLAGS -arch x86_64 -arch arm64" ./configure $@
+      CFLAGS="$CFLAGS $EXTRA_CFLAGS -arch x86_64 -arch arm64" \
+      CXXFLAGS="$CXXFLAGS -arch x86_64 -arch arm64"           \
+      LDFLAGS="$LDFLAGS -arch x86_64 -arch arm64" ./configure $@
    else
-      ./configure $@
+      CFLAGS="$CFLAGS $EXTRA_CFLAGS" ./configure $@
    fi
 }
 
@@ -47,6 +62,15 @@ echo "************************************************************"
 echo "* Building vorbis..."
 echo "************************************************************"
 pushd vorbis
+# libvorbis's configure.ac still passes -force_cpusubtype_ALL on Darwin, a
+# PowerPC-transition-era flag that Apple's current linker rejects outright
+# ("ld: unknown options: -force_cpusubtype_ALL").  That made every Ogg probe in
+# configure fail to *link*, so configure wrongly concluded libogg was missing.
+# Substitute the C17 pin rather than deleting outright, because the Darwin
+# branch overwrites CFLAGS wholesale and would otherwise drop $EXTRA_CFLAGS.
+# (-i.bak rather than a bare -i, because BSD sed on MacOS requires an argument
+# to -i; the backup is removed again so it does not litter the submodule.)
+sed -i.bak "s/-force_cpusubtype_ALL/$EXTRA_CFLAGS/g" configure.ac && rm -f configure.ac.bak
 ./autogen.sh
 do_configure --enable-shared=no --prefix=$(pwd)/temp_install --with-ogg=$(pwd)/../ogg/temp_install
 make install
